@@ -32,13 +32,7 @@ namespace XunleiHomeCloud
             {
                 using (StreamReader SR = new StreamReader(new FileStream(path, FileMode.Open)))
                 {
-                    StringBuilder SB = new StringBuilder();
-                    while (!SR.EndOfStream)
-                    {
-                        string[] param = SR.ReadLine().Split('$');
-                        SB.Append(string.Format("{0}={1}; ", param[1], param[2]));
-                    }
-                    _Cookies = SB.ToString();
+                    _Cookies = SR.ReadToEnd();
                     return true;
                 }
             }

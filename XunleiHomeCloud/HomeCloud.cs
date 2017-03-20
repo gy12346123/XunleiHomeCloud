@@ -43,7 +43,7 @@ namespace XunleiHomeCloud
         /// <returns>DeviceInfo[]</returns>
         public static DeviceInfo[] DeviceList()
         {
-            if (Cookie.CheckCookie())
+            if (!Cookie.CheckCookie())
             {
                 throw new NoCookieException("HomeCloud.DeviceList:Cookie not found.");
             }
@@ -66,7 +66,6 @@ namespace XunleiHomeCloud
         /// </summary>
         /// <param name="cookie">Xunlei cookies</param>
         /// <returns>DeviceInfo[]</returns>
-        /// 
         public static DeviceInfo[] DeviceList(string cookie)
         {
             HttpHelper http = new HttpHelper();
@@ -81,25 +80,28 @@ namespace XunleiHomeCloud
             };
             string result = http.GetHtml(item).Html;
             var json = (JObject)JsonConvert.DeserializeObject(result);
-            if (Convert.ToInt32(json["rtn"]) == 0)
+            switch (Convert.ToInt32(json["rtn"]))
             {
-                DeviceInfo[] device = new DeviceInfo[json["peerList"].Count()];
-                for (int i = 0; i < json["peerList"].Count(); i++)
-                {
-                    device[i] = new DeviceInfo
+                case 0:
+                    DeviceInfo[] device = new DeviceInfo[json["peerList"].Count()];
+                    for (int i = 0; i < json["peerList"].Count(); i++)
                     {
-                        lastLoginTime = Convert.ToInt64(json["peerList"][i]["lastLoginTime"]),
-                        localIP = json["peerList"][i]["localIP"].ToString(),
-                        name = json["peerList"][i]["name"].ToString(),
-                        online = Convert.ToInt32(json["peerList"][i]["online"]),
-                        path_list = json["peerList"][i]["path_list"].ToString(),
-                        pid = json["peerList"][i]["pid"].ToString(),
-                        status = Convert.ToInt32(json["peerList"][i]["status"]),
-                        type = Convert.ToInt32(json["peerList"][i]["type"]),
-                        vodport = Convert.ToInt32(json["peerList"][i]["vodport"])
-                    };
-                }
-                return device;
+                        device[i] = new DeviceInfo
+                        {
+                            lastLoginTime = Convert.ToInt64(json["peerList"][i]["lastLoginTime"]),
+                            localIP = json["peerList"][i]["localIP"].ToString(),
+                            name = json["peerList"][i]["name"].ToString(),
+                            online = Convert.ToInt32(json["peerList"][i]["online"]),
+                            path_list = json["peerList"][i]["path_list"].ToString(),
+                            pid = json["peerList"][i]["pid"].ToString(),
+                            status = Convert.ToInt32(json["peerList"][i]["status"]),
+                            type = Convert.ToInt32(json["peerList"][i]["type"]),
+                            vodport = Convert.ToInt32(json["peerList"][i]["vodport"])
+                        };
+                    }
+                    return device;
+                case 403:
+                    throw new UserSessionNoneException("HomeCloud.DeviceList:User id or Session id is none.");
             }
 
             throw new XunleiNoDeviceException("HomeCloud.DeviceList:Device not found.");
@@ -126,7 +128,7 @@ namespace XunleiHomeCloud
         /// <returns>True:succeed, false:failed</returns>
         public static bool AddNewTask(DeviceInfo device, string url, string fileName)
         {
-            if (Cookie.CheckCookie())
+            if (!Cookie.CheckCookie())
             {
                 throw new NoCookieException("HomeCloud.AddNewTask:Cookie not found.");
             }
@@ -186,13 +188,12 @@ namespace XunleiHomeCloud
             if (Convert.ToInt32(json["rtn"]) == 0)
             {
                 int code = Convert.ToInt32(json["tasks"][0]["result"]);
-                if (code == 0)
+                switch (code)
                 {
-                    return true;
-                }
-                else if (code == 202)
-                {
-                    throw new XunleiRepeatTaskException("Xunlei.AddNewTask:Repeat task, skip.");
+                    case 0:
+                        return true;
+                    case 202:
+                        throw new XunleiRepeatTaskException("Xunlei.AddNewTask:Repeat task, skip.");
                 }
             }
             return false;
@@ -233,9 +234,12 @@ namespace XunleiHomeCloud
             };
             string result = http.GetHtml(item).Html;
             var json = (JObject)JsonConvert.DeserializeObject(result);
-            if (Convert.ToInt32(json["rtn"]) == 0)
+            switch (Convert.ToInt32(json["rtn"]))
             {
-                return json["defaultPath"].ToString();
+                case 0:
+                    return json["defaultPath"].ToString();
+                case 1004:
+                    throw new UserNotLoginException("Xunlei.GetSetting_DefaultPath:User not login.");
             }
             throw new XunleiDevicePathException("Xunlei.GetSetting_DefaultPath:Default path not found.");
         }
@@ -260,7 +264,7 @@ namespace XunleiHomeCloud
         /// <returns>Default path</returns>
         public static string GetSetting_DefaultPath(DeviceInfo device)
         {
-            if (Cookie.CheckCookie())
+            if (!Cookie.CheckCookie())
             {
                 throw new NoCookieException("HomeCloud.GetSetting_DefaultPath:Cookie not found.");
             }

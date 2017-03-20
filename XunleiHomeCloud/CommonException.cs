@@ -38,4 +38,18 @@ namespace XunleiHomeCloud
         public XunleiDevicePathException(string message) : base(message) { }
         public XunleiDevicePathException(string message, Exception inner) : base(message, inner) { }
     }
+
+    public class UserNotLoginException : ApplicationException
+    {
+        public UserNotLoginException() { }
+        public UserNotLoginException(string message) : base(message) { }
+        public UserNotLoginException(string message, Exception inner) : base(message, inner) { }
+    }
+
+    public class UserSessionNoneException : ApplicationException
+    {
+        public UserSessionNoneException() { }
+        public UserSessionNoneException(string message) : base(message) { }
+        public UserSessionNoneException(string message, Exception inner) : base(message, inner) { }
+    }
 }
