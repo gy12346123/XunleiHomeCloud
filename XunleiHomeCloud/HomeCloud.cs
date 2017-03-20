@@ -2,7 +2,6 @@
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -26,6 +25,9 @@ namespace XunleiHomeCloud
         /// </summary>
         public struct DeviceInfo
         {
+            public string accesscode;
+            public string company;
+            public int deviceVersion;
             public long lastLoginTime;
             public string localIP;
             public string name;
@@ -35,6 +37,70 @@ namespace XunleiHomeCloud
             public int status;
             public int type;
             public int vodport;
+        }
+
+        /// <summary>
+        /// tasks.lixianChannel
+        /// </summary>
+        public struct LixianChannelInfo
+        {
+            public int dlBytes;
+            public int failCode;
+            public int serverProgress;
+            public int serverSpeed;
+            public int speed;
+            public int state;
+        }
+
+        /// <summary>
+        /// tasks.vipChannel
+        /// </summary>
+        public struct VipChannelInfo
+        {
+            public int available;
+            public int dlBytes;
+            public int failCode;
+            public int opened;
+            public int speed;
+            public int type;
+        }
+
+        /// <summary>
+        /// Task list item
+        /// </summary>
+        public struct TaskInfo
+        {
+            public long completeTime;
+            public long createTime;
+            public int downTime;
+            public int failCode;
+            public long id;
+            public LixianChannelInfo lixianChannel;
+            public string name;
+            public string path;
+            public int progress;
+            public int remainTime;
+            public long size;
+            public int speed;
+            public int state;
+            public string subList;
+            public int type;
+            public string url;
+            public VipChannelInfo vipChannel;
+        }
+
+        /// <summary>
+        /// TaskList result struct
+        /// </summary>
+        public struct ListInfo
+        {
+            public int completeNum;
+            public int dlNum;
+            public int recycleNum;
+            public int rtn;
+            public int serverFailNum;
+            public int sync;
+            public TaskInfo[] task;
         }
 
         /// <summary>
@@ -280,6 +346,126 @@ namespace XunleiHomeCloud
         {
             return Task.Factory.StartNew(()=> {
                 return GetSetting_DefaultPath(device);
+            });
+        }
+
+        /// <summary>
+        /// Get the home cloud task list
+        /// </summary>
+        /// <param name="device">Xunlei home cloud device</param>
+        /// <param name="cookie">Xunlei cookies</param>
+        /// <returns>ListInfo</returns>
+        public static ListInfo TaskList(DeviceInfo device, string cookie)
+        {
+            HttpHelper http = new HttpHelper();
+            HttpItem item = new HttpItem()
+            {
+                URL = string.Format("{0}list?pid={1}&type=0&pos=0&number=10&needUrl=1&v=2&ct=0", XunleiBaseURL, device.pid),
+                Encoding = Encoding.UTF8,
+                Timeout = Timeout,
+                Referer = "http://yuancheng.xunlei.com/",
+                Host = "homecloud.yuancheng.xunlei.com",
+                Cookie = cookie
+            };
+            string result = http.GetHtml(item).Html;
+            var json = (JObject)JsonConvert.DeserializeObject(result);
+            switch (Convert.ToInt32(json["rtn"]))
+            {
+                case 0:
+                    ListInfo list = new ListInfo {
+                        completeNum = Convert.ToInt32(json["completeNum"]),
+                        dlNum = Convert.ToInt32(json["dlNum"]),
+                        recycleNum = Convert.ToInt32(json["recycleNum"]),
+                        rtn = Convert.ToInt32(json["rtn"]),
+                        serverFailNum = Convert.ToInt32(json["serverFailNum"]),
+                        sync = Convert.ToInt32(json["sync"])
+                    };
+                    if (json["tasks"].HasValues)
+                    {
+                        TaskInfo[] task = new TaskInfo[json["tasks"].Count()];
+                        for (int i = 0; i < json["tasks"].Count(); i++)
+                        {
+                            task[i].completeTime = Convert.ToInt64(json["tasks"][i]["completeTime"]);
+                            task[i].createTime = Convert.ToInt64(json["tasks"][i]["createTime"]);
+                            task[i].downTime = Convert.ToInt32(json["tasks"][i]["downTime"]);
+                            task[i].failCode = Convert.ToInt32(json["tasks"][i]["failCode"]);
+                            task[i].id = Convert.ToInt64(json["tasks"][i]["id"]);
+                            if (json["tasks"][i]["lixianChannel"].HasValues)
+                            {
+                                task[i].lixianChannel = new LixianChannelInfo {
+                                    dlBytes = Convert.ToInt32(json["tasks"][i]["lixianChannel"]["dlBytes"]),
+                                    failCode = Convert.ToInt32(json["tasks"][i]["lixianChannel"]["failCode"]),
+                                    serverProgress = Convert.ToInt32(json["tasks"][i]["lixianChannel"]["serverProgress"]),
+                                    serverSpeed = Convert.ToInt32(json["tasks"][i]["lixianChannel"]["serverSpeed"]),
+                                    speed = Convert.ToInt32(json["tasks"][i]["lixianChannel"]["speed"]),
+                                    state = Convert.ToInt32(json["tasks"][i]["lixianChannel"]["state"])
+                                };
+                            }
+                            task[i].name = json["tasks"][i]["name"].ToString();
+                            task[i].path = json["tasks"][i]["path"].ToString();
+                            task[i].progress = Convert.ToInt32(json["tasks"][i]["progress"]);
+                            task[i].remainTime = Convert.ToInt32(json["tasks"][i]["remainTime"]);
+                            task[i].size = Convert.ToInt64(json["tasks"][i]["size"]);
+                            task[i].speed = Convert.ToInt32(json["tasks"][i]["speed"]);
+                            task[i].state = Convert.ToInt32(json["tasks"][i]["state"]);
+                            task[i].subList = json["tasks"][i]["subList"].ToString();
+                            task[i].type = Convert.ToInt32(json["tasks"][i]["type"]);
+                            task[i].url = json["tasks"][i]["url"].ToString();
+                            if (json["tasks"][i]["vipChannel"].HasValues)
+                            {
+                                task[i].vipChannel = new VipChannelInfo {
+                                    available = Convert.ToInt32(json["tasks"][i]["vipChannel"]["available"]),
+                                    dlBytes = Convert.ToInt32(json["tasks"][i]["vipChannel"]["dlBytes"]),
+                                    failCode = Convert.ToInt32(json["tasks"][i]["vipChannel"]["failCode"]),
+                                    opened = Convert.ToInt32(json["tasks"][i]["vipChannel"]["opened"]),
+                                    speed = Convert.ToInt32(json["tasks"][i]["vipChannel"]["speed"]),
+                                    type = Convert.ToInt32(json["tasks"][i]["vipChannel"]["type"]),
+                                };
+                            }
+                        }
+                        list.task = task;
+                    }
+                    return list;
+            }
+            throw new XunleiTaskListException("HomeCloud.TaskList:Return error code.");
+        }
+
+        /// <summary>
+        /// Get the home cloud task list use cookies
+        /// </summary>
+        /// <param name="device">Xunlei home cloud device</param>
+        /// <returns>ListInfo</returns>
+        public static ListInfo TaskList(DeviceInfo device)
+        {
+            if (!Cookie.CheckCookie())
+            {
+                throw new NoCookieException("HomeCloud.GetSetting_DefaultPath:Cookie not found.");
+            }
+            return TaskList(device, Cookie.Cookies);
+        }
+
+        /// <summary>
+        /// Get the home cloud task list
+        /// </summary>
+        /// <param name="device">Xunlei home cloud device</param>
+        /// <param name="cookie">Xunlei cookies</param>
+        /// <returns>Task<ListInfo></returns>
+        public static Task<ListInfo> TaskListAsync(DeviceInfo device, string cookie)
+        {
+            return Task.Factory.StartNew(()=> {
+                return TaskList(device, cookie);
+            });
+        }
+
+        /// <summary>
+        /// Get the home cloud task list use cookies
+        /// </summary>
+        /// <param name="device">Xunlei home cloud device</param>
+        /// <returns>Task<ListInfo></returns>
+        public static Task<ListInfo> TaskListAsync(DeviceInfo device)
+        {
+            return Task.Factory.StartNew(()=> {
+                return TaskList(device);
             });
         }
     }

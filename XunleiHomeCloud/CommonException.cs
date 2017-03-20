@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace XunleiHomeCloud
 {
@@ -51,5 +47,12 @@ namespace XunleiHomeCloud
         public UserSessionNoneException() { }
         public UserSessionNoneException(string message) : base(message) { }
         public UserSessionNoneException(string message, Exception inner) : base(message, inner) { }
+    }
+
+    public class XunleiTaskListException : ApplicationException
+    {
+        public XunleiTaskListException() { }
+        public XunleiTaskListException(string message) : base(message) { }
+        public XunleiTaskListException(string message, Exception inner) : base(message, inner) { }
     }
 }
