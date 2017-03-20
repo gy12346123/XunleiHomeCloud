@@ -8,6 +8,8 @@ namespace XunleiHomeCloud
     {
         private static string _Cookies;
 
+        private static string[] _CookieParam = new string[5] { "deviceid", "usrname", "jumpkey", "sessionid", "userid" };
+
         /// <summary>
         /// Xunlei cookies
         /// </summary>
@@ -49,6 +51,30 @@ namespace XunleiHomeCloud
             return Task.Factory.StartNew(()=> {
                 return LoadCookie(path, overwrite);
             });
+        }
+
+        /// <summary>
+        /// Set xunlei home cloud cookies
+        /// </summary>
+        /// <param name="cookie">Xunlei cookies</param>
+        /// <returns>True:succeed, false:failed</returns>
+        public static bool SetCookie(string cookie)
+        {
+            bool flag = false;
+            foreach(string keyword in _CookieParam)
+            {
+                if (!cookie.Contains(keyword))
+                {
+                    flag = true;
+                    break;
+                }
+            }
+            if (flag)
+            {
+                return false;
+            }
+            _Cookies = cookie;
+            return true;
         }
 
         /// <summary>

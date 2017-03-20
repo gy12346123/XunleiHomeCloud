@@ -103,6 +103,22 @@ namespace XunleiHomeCloud
             public TaskInfo[] task;
         }
 
+        public struct SettingInfo
+        {
+            public int autoDlSubtitle;
+            public int autoOpenLixian;
+            public int autoOpenVip;
+            public string defaultPath;
+            public int downloadSpeedLimit;
+            public int maxRunTaskNumber;
+            public string msg;
+            public int rtn;
+            public int slEndTime;
+            public int slStartTime;
+            public int syncRange;
+            public int uploadSpeedLimit;
+        }
+
         /// <summary>
         /// Get xunlei home cloud devices use cookies
         /// </summary>
@@ -361,13 +377,14 @@ namespace XunleiHomeCloud
         /// </summary>
         /// <param name="device">Xunlei home cloud device</param>
         /// <param name="cookie">Xunlei cookies</param>
+        /// <param name="number">Hit list number</param>
         /// <returns>ListInfo</returns>
-        public static ListInfo TaskList(DeviceInfo device, string cookie)
+        public static ListInfo TaskList(DeviceInfo device, string cookie, int number = 10)
         {
             HttpHelper http = new HttpHelper();
             HttpItem item = new HttpItem()
             {
-                URL = string.Format("{0}list?pid={1}&type=0&pos=0&number=10&needUrl=1&v=2&ct=0", XunleiBaseURL, device.pid),
+                URL = string.Format("{0}list?pid={1}&type=0&pos=0&number={2}&needUrl=1&v=2&ct=0", XunleiBaseURL, device.pid, number),
                 Encoding = Encoding.UTF8,
                 Timeout = Timeout,
                 Referer = "http://yuancheng.xunlei.com/",
@@ -448,14 +465,15 @@ namespace XunleiHomeCloud
         /// Get the home cloud task list use cookies
         /// </summary>
         /// <param name="device">Xunlei home cloud device</param>
+        /// <param name="number">Hit list number</param>
         /// <returns>ListInfo</returns>
-        public static ListInfo TaskList(DeviceInfo device)
+        public static ListInfo TaskList(DeviceInfo device, int number = 10)
         {
             if (!Cookie.CheckCookie())
             {
-                throw new XunleiNoCookieException("HomeCloud.GetSetting_DefaultPath:Cookie not found.");
+                throw new XunleiNoCookieException("HomeCloud.TaskList:Cookie not found.");
             }
-            return TaskList(device, Cookie.Cookies);
+            return TaskList(device, Cookie.Cookies, number);
         }
 
         /// <summary>
@@ -463,11 +481,12 @@ namespace XunleiHomeCloud
         /// </summary>
         /// <param name="device">Xunlei home cloud device</param>
         /// <param name="cookie">Xunlei cookies</param>
+        /// <param name="number">Hit list number</param>
         /// <returns>Task<ListInfo></returns>
-        public static Task<ListInfo> TaskListAsync(DeviceInfo device, string cookie)
+        public static Task<ListInfo> TaskListAsync(DeviceInfo device, string cookie, int number = 10)
         {
             return Task.Factory.StartNew(()=> {
-                return TaskList(device, cookie);
+                return TaskList(device, cookie, number);
             });
         }
 
@@ -475,11 +494,200 @@ namespace XunleiHomeCloud
         /// Get the home cloud task list use cookies
         /// </summary>
         /// <param name="device">Xunlei home cloud device</param>
+        /// <param name="number">Hit list number</param>
         /// <returns>Task<ListInfo></returns>
-        public static Task<ListInfo> TaskListAsync(DeviceInfo device)
+        public static Task<ListInfo> TaskListAsync(DeviceInfo device, int number = 10)
         {
             return Task.Factory.StartNew(()=> {
-                return TaskList(device);
+                return TaskList(device, number);
+            });
+        }
+
+        /// <summary>
+        /// Get xunlei home cloud setting
+        /// </summary>
+        /// <param name="device">Xunlei home cloud device</param>
+        /// <param name="cookie">Xunlei cookies</param>
+        /// <returns>SettingInfo</returns>
+        public static SettingInfo GetSetting(DeviceInfo device, string cookie)
+        {
+            HttpHelper http = new HttpHelper();
+            HttpItem item = new HttpItem()
+            {
+                URL = string.Format("{0}settings?pid={1}&v=2&ct=0", XunleiBaseURL, device.pid),
+                Encoding = Encoding.UTF8,
+                Timeout = Timeout,
+                Referer = "http://yuancheng.xunlei.com/",
+                Host = "homecloud.yuancheng.xunlei.com",
+                Cookie = cookie,
+                Accept = "application/javascript, */*;q=0.8"
+            };
+            string result = http.GetHtml(item).Html;
+            var json = (JObject)JsonConvert.DeserializeObject(result);
+            int code = Convert.ToInt32(json["rtn"]);
+            if (code == 0)
+            {
+                return new SettingInfo {
+                    autoDlSubtitle = Convert.ToInt32(json["autoDlSubtitle"]),
+                    autoOpenLixian = Convert.ToInt32(json["autoOpenLixian"]),
+                    autoOpenVip = Convert.ToInt32(json["autoOpenVip"]),
+                    defaultPath = json["defaultPath"].ToString(),
+                    downloadSpeedLimit = Convert.ToInt32(json["downloadSpeedLimit"]),
+                    maxRunTaskNumber = Convert.ToInt32(json["maxRunTaskNumber"]),
+                    msg = json["msg"].ToString(),
+                    rtn = Convert.ToInt32(json["rtn"]),
+                    slEndTime = Convert.ToInt32(json["slEndTime"]),
+                    slStartTime = Convert.ToInt32(json["slStartTime"]),
+                    syncRange = Convert.ToInt32(json["syncRange"]),
+                    uploadSpeedLimit = Convert.ToInt32(json["uploadSpeedLimit"])
+                };
+            }else
+            {
+                CommonException.ErrorCode(code, "HomeCloud.GetSetting");
+            }
+            throw new XunleiSettingException("HomeCloud.GetSetting:Return error code.");
+        }
+
+        /// <summary>
+        /// Get xunlei home cloud setting use cookies
+        /// </summary>
+        /// <param name="device">Xunlei home cloud device</param>
+        /// <returns>SettingInfo</returns>
+        public static SettingInfo GetSetting(DeviceInfo device)
+        {
+            if (!Cookie.CheckCookie())
+            {
+                throw new XunleiNoCookieException("HomeCloud.GetSetting:Cookie not found.");
+            }
+            return GetSetting(device, Cookie.Cookies);
+        }
+
+        /// <summary>
+        /// Get xunlei home cloud setting
+        /// </summary>
+        /// <param name="device">Xunlei home cloud device</param>
+        /// <param name="cookie">Xunlei cookies</param>
+        /// <returns>Task<SettingInfo></returns>
+        public static Task<SettingInfo> GetSettingAsync(DeviceInfo device, string cookie)
+        {
+            return Task.Factory.StartNew(()=> {
+                return GetSetting(device, cookie);
+            });
+        }
+
+        /// <summary>
+        /// Get xunlei home cloud setting
+        /// </summary>
+        /// <param name="device">Xunlei home cloud device</param>
+        /// <returns>Task<SettingInfo></returns>
+        public static Task<SettingInfo> GetSettingAsync(DeviceInfo device)
+        {
+            return Task.Factory.StartNew(()=> {
+                return GetSetting(device);
+            });
+        }
+
+        /// <summary>
+        /// Set Setting
+        /// </summary>
+        /// <param name="device">Xunlei home cloud device</param>
+        /// <param name="cookie">Xunlei cookies</param>
+        /// <param name="maxRunTaskNumber">Max running task number</param>
+        /// <param name="slStartTime"></param>
+        /// <param name="slEndTime"></param>
+        /// <param name="downloadSpeedLimit">Max download speed</param>
+        /// <param name="uploadSpeedLimit">Max upload speed</param>
+        /// <param name="autoDlSubtitle"></param>
+        /// <param name="autoOpenLixian">1:Auto open, 0:not</param>
+        /// <param name="autoOpenVip">1:Auto open, 0:not</param>
+        /// <returns>True:succeed, false:failed</returns>
+        public static bool PostSetting(DeviceInfo device, string cookie, int maxRunTaskNumber, int slStartTime, int slEndTime, int downloadSpeedLimit, int uploadSpeedLimit, int autoDlSubtitle, int autoOpenLixian, int autoOpenVip)
+        {
+            HttpHelper http = new HttpHelper();
+            HttpItem item = new HttpItem()
+            {
+                URL = string.Format("{0}settings?pid={1}&maxRunTaskNumber={2}&slStartTime={3}&slEndTime={4}&downloadSpeedLimit={5}&uploadSpeedLimit={6}&autoDlSubtitle={7}&autoOpenLixian={8}&autoOpenVip={9}&v=2&ct=0",
+                XunleiBaseURL, device.pid, maxRunTaskNumber, slStartTime, slEndTime, downloadSpeedLimit, uploadSpeedLimit, autoDlSubtitle, autoOpenLixian, autoOpenVip),
+                Encoding = Encoding.UTF8,
+                Timeout = Timeout,
+                Referer = "http://yuancheng.xunlei.com/",
+                Host = "homecloud.yuancheng.xunlei.com",
+                Cookie = cookie
+            };
+            string result = http.GetHtml(item).Html;
+            var json = (JObject)JsonConvert.DeserializeObject(result);
+            int code = Convert.ToInt32(json["rtn"]);
+            if (code == 0)
+            {
+                return true;
+            }else
+            {
+                CommonException.ErrorCode(code, "HomeCloud.PostSetting");
+            }
+            throw new XunleiSettingException("HomeCloud.PostSetting:Return error code.");
+        }
+
+
+        /// <summary>
+        /// Set Setting use cookies
+        /// </summary>
+        /// <param name="device">Xunlei home cloud device</param>
+        /// <param name="maxRunTaskNumber">Max running task number</param>
+        /// <param name="slStartTime"></param>
+        /// <param name="slEndTime"></param>
+        /// <param name="downloadSpeedLimit">Max download speed</param>
+        /// <param name="uploadSpeedLimit">Max upload speed</param>
+        /// <param name="autoDlSubtitle"></param>
+        /// <param name="autoOpenLixian">1:Auto open, 0:not</param>
+        /// <param name="autoOpenVip">1:Auto open, 0:not</param>
+        /// <returns>True:succeed, false:failed</returns>
+        public static bool PostSetting(DeviceInfo device, int maxRunTaskNumber, int slStartTime, int slEndTime, int downloadSpeedLimit, int uploadSpeedLimit, int autoDlSubtitle, int autoOpenLixian, int autoOpenVip)
+        {
+            if (!Cookie.CheckCookie())
+            {
+                throw new XunleiNoCookieException("HomeCloud.PostSetting:Cookie not found.");
+            }
+            return PostSetting(device, Cookie.Cookies, maxRunTaskNumber, slStartTime, slEndTime, downloadSpeedLimit, uploadSpeedLimit, autoDlSubtitle, autoOpenLixian, autoOpenVip);
+        }
+
+        /// <summary>
+        /// Set Setting
+        /// </summary>
+        /// <param name="device">Xunlei home cloud device</param>
+        /// <param name="cookie">Xunlei cookies</param>
+        /// <param name="maxRunTaskNumber">Max running task number</param>
+        /// <param name="slStartTime"></param>
+        /// <param name="slEndTime"></param>
+        /// <param name="downloadSpeedLimit">Max download speed</param>
+        /// <param name="uploadSpeedLimit">Max upload speed</param>
+        /// <param name="autoDlSubtitle"></param>
+        /// <param name="autoOpenLixian">1:Auto open, 0:not</param>
+        /// <param name="autoOpenVip">1:Auto open, 0:not</param>
+        /// <returns>Task<bool></returns>
+        public static Task<bool> PostSettingAsync(DeviceInfo device, string cookie, int maxRunTaskNumber, int slStartTime, int slEndTime, int downloadSpeedLimit, int uploadSpeedLimit, int autoDlSubtitle, int autoOpenLixian, int autoOpenVip)
+        {
+            return Task.Factory.StartNew(()=> {
+                return PostSetting(device, cookie, maxRunTaskNumber, slStartTime, slEndTime, downloadSpeedLimit, uploadSpeedLimit, autoDlSubtitle, autoOpenLixian, autoOpenVip);
+            });
+        }
+
+        /// <summary>
+        /// Set Setting use cookies
+        /// </summary>
+        /// <param name="device">Xunlei home cloud device</param>
+        /// <param name="maxRunTaskNumber">Max running task number</param>
+        /// <param name="slStartTime"></param>
+        /// <param name="slEndTime"></param>
+        /// <param name="downloadSpeedLimit">Max download speed</param>
+        /// <param name="uploadSpeedLimit">Max upload speed</param>
+        /// <param name="autoDlSubtitle"></param>
+        /// <param name="autoOpenLixian">1:Auto open, 0:not</param>
+        /// <param name="autoOpenVip">1:Auto open, 0:not</param>
+        /// <returns>Task<bool></returns>
+        public static Task<bool> PostSettingAsync(DeviceInfo device, int maxRunTaskNumber, int slStartTime, int slEndTime, int downloadSpeedLimit, int uploadSpeedLimit, int autoDlSubtitle, int autoOpenLixian, int autoOpenVip)
+        {
+            return Task.Factory.StartNew(()=> {
+                return PostSetting(device, maxRunTaskNumber, slStartTime, slEndTime, downloadSpeedLimit, uploadSpeedLimit, autoDlSubtitle, autoOpenLixian, autoOpenVip);
             });
         }
     }

@@ -75,4 +75,11 @@ namespace XunleiHomeCloud
         public XunleiConnectionException(string message) : base(message) { }
         public XunleiConnectionException(string message, Exception inner) : base(message, inner) { }
     }
+
+    public class XunleiSettingException : ApplicationException
+    {
+        public XunleiSettingException() { }
+        public XunleiSettingException(string message) : base(message) { }
+        public XunleiSettingException(string message, Exception inner) : base(message, inner) { }
+    }
 }
