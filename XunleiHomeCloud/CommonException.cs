@@ -4,7 +4,20 @@ namespace XunleiHomeCloud
 {
     public class CommonException
     {
-
+        public static void ErrorCode(int code, string from)
+        {
+            switch (code)
+            {
+                case 202:
+                    throw new XunleiRepeatTaskException(string.Format("{0}: Repeat task, skip.", from));
+                case 403:
+                    throw new XunleiUserSessionNoneException(string.Format("{0}: User id or Session id is none.", from));
+                case 420:
+                    throw new XunleiConnectionException(string.Format("{0}: Device client connection error.", from));
+                case 1004:
+                    throw new XunleiUserNotLoginException(string.Format("{0}: User not login.", from));
+            }
+        }
     }
 
     public class XunleiNoDeviceException : ApplicationException
@@ -14,11 +27,11 @@ namespace XunleiHomeCloud
         public XunleiNoDeviceException(string message, Exception inner) : base(message, inner) { }
     }
 
-    public class NoCookieException : ApplicationException
+    public class XunleiNoCookieException : ApplicationException
     {
-        public NoCookieException () { }
-        public NoCookieException(string message) : base(message) { }
-        public NoCookieException(string message, Exception inner) : base(message, inner) { }
+        public XunleiNoCookieException () { }
+        public XunleiNoCookieException(string message) : base(message) { }
+        public XunleiNoCookieException(string message, Exception inner) : base(message, inner) { }
     }
 
     public class XunleiRepeatTaskException : ApplicationException
@@ -35,18 +48,18 @@ namespace XunleiHomeCloud
         public XunleiDevicePathException(string message, Exception inner) : base(message, inner) { }
     }
 
-    public class UserNotLoginException : ApplicationException
+    public class XunleiUserNotLoginException : ApplicationException
     {
-        public UserNotLoginException() { }
-        public UserNotLoginException(string message) : base(message) { }
-        public UserNotLoginException(string message, Exception inner) : base(message, inner) { }
+        public XunleiUserNotLoginException() { }
+        public XunleiUserNotLoginException(string message) : base(message) { }
+        public XunleiUserNotLoginException(string message, Exception inner) : base(message, inner) { }
     }
 
-    public class UserSessionNoneException : ApplicationException
+    public class XunleiUserSessionNoneException : ApplicationException
     {
-        public UserSessionNoneException() { }
-        public UserSessionNoneException(string message) : base(message) { }
-        public UserSessionNoneException(string message, Exception inner) : base(message, inner) { }
+        public XunleiUserSessionNoneException() { }
+        public XunleiUserSessionNoneException(string message) : base(message) { }
+        public XunleiUserSessionNoneException(string message, Exception inner) : base(message, inner) { }
     }
 
     public class XunleiTaskListException : ApplicationException
@@ -54,5 +67,12 @@ namespace XunleiHomeCloud
         public XunleiTaskListException() { }
         public XunleiTaskListException(string message) : base(message) { }
         public XunleiTaskListException(string message, Exception inner) : base(message, inner) { }
+    }
+
+    public class XunleiConnectionException : ApplicationException
+    {
+        public XunleiConnectionException() { }
+        public XunleiConnectionException(string message) : base(message) { }
+        public XunleiConnectionException(string message, Exception inner) : base(message, inner) { }
     }
 }
