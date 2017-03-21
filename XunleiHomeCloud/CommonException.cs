@@ -20,6 +20,7 @@ namespace XunleiHomeCloud
         }
     }
 
+    #region CustomException
     public class XunleiNoDeviceException : ApplicationException
     {
         public XunleiNoDeviceException() { }
@@ -82,4 +83,5 @@ namespace XunleiHomeCloud
         public XunleiSettingException(string message) : base(message) { }
         public XunleiSettingException(string message, Exception inner) : base(message, inner) { }
     }
+    #endregion
 }

@@ -10,6 +10,8 @@ namespace XunleiHomeCloud
 {
     public class HomeCloud
     {
+
+        #region Private
         /// <summary>
         /// Http time out
         /// </summary>
@@ -19,7 +21,9 @@ namespace XunleiHomeCloud
         /// http://homecloud.yuancheng.xunlei.com/
         /// </summary>
         private static string XunleiBaseURL = "http://homecloud.yuancheng.xunlei.com/";
+        #endregion
 
+        #region PublicStruct
         /// <summary>
         /// Xunlei home cloud device info struct
         /// </summary>
@@ -118,6 +122,7 @@ namespace XunleiHomeCloud
             public int syncRange;
             public int uploadSpeedLimit;
         }
+        #endregion
 
         /// <summary>
         /// Get xunlei home cloud devices use cookies
