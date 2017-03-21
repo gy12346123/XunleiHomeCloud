@@ -10,6 +10,7 @@ namespace XunleiHomeCloud
 {
     public class Login
     {
+        #region Private
         /// <summary>
         /// Xunlei login base url
         /// </summary>
@@ -19,7 +20,9 @@ namespace XunleiHomeCloud
         /// Http time out
         /// </summary>
         private static int Timeout = 30000;
+        #endregion
 
+        #region PublicStruct
         /// <summary>
         /// For generate a device id
         /// </summary>
@@ -30,6 +33,7 @@ namespace XunleiHomeCloud
             public string xl_fp_sign;
             public long cachetime;
         }
+        #endregion
 
         /// <summary>
         /// Execute JScript
