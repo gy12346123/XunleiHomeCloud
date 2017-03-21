@@ -30,6 +30,17 @@ namespace XunleiHomeCloud
         }
 
         /// <summary>
+        /// Return Milliseconds TimeStamp as long use DateTime
+        /// </summary>
+        /// <param name="dateTime"></param>
+        /// <returns></returns>
+        public static long GetLongTimeStamp(DateTime dateTime)
+        {
+            DateTime start = new DateTime(1970, 1, 1, 0, 0, 0, dateTime.Kind);
+            return Convert.ToInt64((dateTime - start).TotalMilliseconds);
+        }
+
+        /// <summary>
         /// Encode contents to URL format
         /// </summary>
         /// <param name="content"></param>

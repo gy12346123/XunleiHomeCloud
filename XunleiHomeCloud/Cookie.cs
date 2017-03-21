@@ -6,8 +6,14 @@ namespace XunleiHomeCloud
 {
     public class Cookie
     {
+        /// <summary>
+        /// Private cookies
+        /// </summary>
         private static string _Cookies;
 
+        /// <summary>
+        /// The param which cookies must include
+        /// </summary>
         private static string[] _CookieParam = new string[5] { "deviceid", "usrname", "jumpkey", "sessionid", "userid" };
 
         /// <summary>
