@@ -35,5 +35,9 @@
 ```
     bool result = HomeCloud.PostSetting(list[0], 3, 0, 1440, 2048, 0, 0, 1, 1);
 ```
+添加新下载任务，为对应设备添加新下载任务，需提供下载链接及存储文件名。
+```
+    bool taskResult = HomeCloud.AddNewTask(list[0], "http://test.com/test.torrent", "1.torrent");
+```
 # License
 Under the GPL license.See the LICENSE file for more info. 
