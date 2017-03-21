@@ -83,5 +83,12 @@ namespace XunleiHomeCloud
         public XunleiSettingException(string message) : base(message) { }
         public XunleiSettingException(string message, Exception inner) : base(message, inner) { }
     }
+
+    public class XunleiLoginDeviceIdException : ApplicationException
+    {
+        public XunleiLoginDeviceIdException() { }
+        public XunleiLoginDeviceIdException(string message) : base(message) { }
+        public XunleiLoginDeviceIdException(string message, Exception inner) : base(message, inner) { }
+    }
     #endregion
 }

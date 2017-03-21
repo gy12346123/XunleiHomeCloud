@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace XunleiHomeCloud
@@ -97,7 +98,6 @@ namespace XunleiHomeCloud
         /// <returns>Cookies</returns>
         public static string GenerateDeviceId(string userAgent = null)
         {
-
             var generatorInfo = GenerateDII(userAgent == null ? "Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; Trident/5.0)" : userAgent);
             StringBuilder SB = new StringBuilder("xl_fp_raw=");
             SB.Append(Tools.URLEncoding(generatorInfo.xl_fp_raw, Encoding.UTF8));
@@ -115,6 +115,94 @@ namespace XunleiHomeCloud
                 Postdata = SB.ToString()
             };
             return http.GetHtml(item).Cookie;
+        }
+
+        /// <summary>
+        /// Generate device id
+        /// </summary>
+        /// <param name="userAgent">Browser user agent, Default: Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; Trident/5.0), if = null</param>
+        /// <returns>Task<string></returns>
+        public static Task<string> GenerateDeviceIdAsync(string userAgent = null)
+        {
+            return Task.Factory.StartNew(()=> {
+                return GenerateDeviceId(userAgent);
+            });
+        }
+
+        /// <summary>
+        /// Use username, password and device id to login, and return cookies
+        /// </summary>
+        /// <param name="username">Xunlei username</param>
+        /// <param name="password">Xunlei password</param>
+        /// <param name="deviceIdCookie">GenerateDeviceId()</param>
+        /// <returns>Cookies</returns>
+        public static string Post(string username, string password, string deviceIdCookie)
+        {
+            var match = Regex.Match(deviceIdCookie, "(?<=deviceid=).{32}");
+            if (!match.Success)
+            {
+                throw new XunleiLoginDeviceIdException("Device id cookie format error.");
+            }
+
+            StringBuilder SB = new StringBuilder("p=");
+            SB.Append(Tools.URLEncoding(password, Encoding.UTF8));
+            SB.Append("&u=");
+            SB.Append(Tools.URLEncoding(username, Encoding.UTF8));
+            SB.Append("&verifycode=&login_enable=0&business_type=113&v=101&cachetime=");
+            SB.Append(Tools.GetLongTimeStamp(DateTime.UtcNow));
+            HttpHelper http = new HttpHelper();
+            HttpItem item = new HttpItem()
+            {
+                URL = string.Format("{0}sec2login/?csrf_token={1}", BaseURL, MD5Helper.HashString(match.Value)),
+                Encoding = Encoding.UTF8,
+                Timeout = Timeout,
+                Referer = string.Format("http://i.xunlei.com/login/?r_d=1&use_cdn=0&timestamp={0}&refurl=http%3A%2F%2Fyuancheng.xunlei.com%2Flogin.html", Tools.GetLongTimeStamp(DateTime.UtcNow)),
+                Host = "login.xunlei.com",
+                ContentType = "application/x-www-form-urlencoded",
+                Method = "Post",
+                Postdata = SB.ToString(),
+                Cookie = deviceIdCookie
+            };
+            return http.GetHtml(item).Cookie.Replace(";,", ";");
+        }
+
+        /// <summary>
+        /// Use username, password and device id to login, and return cookies
+        /// </summary>
+        /// <param name="username">Xunlei username</param>
+        /// <param name="password">Xunlei password</param>
+        /// <param name="deviceIdCookie">GenerateDeviceId()</param>
+        /// <returns>Task<string></returns>
+        public static Task<string> PostAsync(string username, string password, string deviceIdCookie)
+        {
+            return Task.Factory.StartNew(()=> {
+                return Post(username, password, deviceIdCookie);
+            });
+        }
+
+        /// <summary>
+        /// Use username and password to login, and return cookies
+        /// </summary>
+        /// <param name="username">Xunlei username</param>
+        /// <param name="password">Xunlei password</param>
+        /// <returns>Cookies</returns>
+        public static string Post(string username, string password)
+        {
+            string deviceIdCookie = GenerateDeviceId();
+            return Post(username, password, deviceIdCookie);
+        }
+
+        /// <summary>
+        /// Use username and password to login, and return cookies
+        /// </summary>
+        /// <param name="username">Xunlei username</param>
+        /// <param name="password">Xunlei password</param>
+        /// <returns>Task<string></returns>
+        public static Task<string> PostAsync(string username, string password)
+        {
+            return Task.Factory.StartNew(()=> {
+                return Post(username, password);
+            });
         }
     }
 }
