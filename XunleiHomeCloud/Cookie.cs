@@ -39,8 +39,11 @@ namespace XunleiHomeCloud
             {
                 using (StreamReader SR = new StreamReader(new FileStream(path, FileMode.Open)))
                 {
-                    _Cookies = SR.ReadToEnd();
-                    return true;
+                    if (SetCookie(SR.ReadToEnd()))
+                    {
+                        return true;
+                    }
+                    throw new XunleiCookiesParamException("Cookie.LoadCookie:Cookie param error, maybe miss some pairs.");
                 }
             }
             return false;
@@ -69,6 +72,7 @@ namespace XunleiHomeCloud
             bool flag = false;
             foreach(string keyword in _CookieParam)
             {
+                // Will return false if the cookie not contain the keywords
                 if (!cookie.Contains(keyword))
                 {
                     flag = true;

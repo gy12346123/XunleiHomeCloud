@@ -90,5 +90,12 @@ namespace XunleiHomeCloud
         public XunleiLoginDeviceIdException(string message) : base(message) { }
         public XunleiLoginDeviceIdException(string message, Exception inner) : base(message, inner) { }
     }
+
+    public class XunleiCookiesParamException : ApplicationException
+    {
+        public XunleiCookiesParamException() { }
+        public XunleiCookiesParamException(string message) : base(message) { }
+        public XunleiCookiesParamException(string message, Exception inner) : base(message, inner) { }
+    }
     #endregion
 }
