@@ -58,7 +58,8 @@ namespace XunleiHomeCloud
         }
 
         /// <summary>
-        /// Get xunlei encrypt function(js)
+        /// Get xunlei encrypt function(js).
+        /// Query the risk?cmd=algorithm, will return a JS function, used to hash a string like md5
         /// </summary>
         /// <param name="longTimeStamp">Tools.GetLongTimeStamp()</param>
         /// <returns>Js function</returns>
@@ -73,6 +74,7 @@ namespace XunleiHomeCloud
                 Referer = string.Format("http://i.xunlei.com/login/?r_d=1&use_cdn=0&timestamp={0}&refurl=http%3A%2F%2Fyuancheng.xunlei.com%2Flogin.html", longTimeStamp),
                 Host = "login.xunlei.com"
             };
+            // With a "\n" at last line, need replace it
             return http.GetHtml(item).Html.Replace("\n", "");
         }
 
@@ -83,13 +85,20 @@ namespace XunleiHomeCloud
         /// <returns>GenerateDeviceIdInfo</returns>
         private static GenerateDeviceIdInfo GenerateDII(string userAgent)
         {
+            // Use use agent to generate a "xl_al"
             StringBuilder SB = new StringBuilder(userAgent);
+            // Can change this by yourself
             SB.Append("###zh-cn###24###960x1440###-540###true###true###true###undefined###undefined###x86###Win32#########");
+            // Need a md5 string at last, so just hash a time stamp
             SB.Append(MD5Helper.HashString(Tools.GetTimeStamp()));
+            // Convert the "xl_al" to Base64
             string raw = Convert.ToBase64String(Encoding.UTF8.GetBytes(SB.ToString()));
             return new GenerateDeviceIdInfo {
+                // The raw data(Base64 format)
                 xl_fp_raw = raw,
+                // Raw data md5
                 xl_fp = MD5Helper.HashString(raw),
+                // Get the Encrypt function and hash the raw data by this function
                 xl_fp_sign = ExecuteScript(string.Format("xl_al(\"{0}\")", raw), XunleiEncryptFunction(Tools.GetLongTimeStamp(DateTime.UtcNow))),
                 cachetime = Tools.GetLongTimeStamp(DateTime.UtcNow)
             };
@@ -102,8 +111,11 @@ namespace XunleiHomeCloud
         /// <returns>Cookies</returns>
         public static string GenerateDeviceId(string userAgent = null)
         {
+            // Generate a GenerateDeviceIdInfo
             var generatorInfo = GenerateDII(userAgent == null ? "Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; Trident/5.0)" : userAgent);
+            // Create Postdata
             StringBuilder SB = new StringBuilder("xl_fp_raw=");
+            // Encoding the "xl_fp_raw" because it has a "="
             SB.Append(Tools.URLEncoding(generatorInfo.xl_fp_raw, Encoding.UTF8));
             SB.Append(string.Format("&xl_fp={0}&xl_fp_sign={1}&cachetime={2}", generatorInfo.xl_fp, generatorInfo.xl_fp_sign, generatorInfo.cachetime));
             HttpHelper http = new HttpHelper();
@@ -142,21 +154,27 @@ namespace XunleiHomeCloud
         /// <returns>Cookies</returns>
         public static string Post(string username, string password, string deviceIdCookie)
         {
+            // We need the 32 chars to generate a md5 string
             var match = Regex.Match(deviceIdCookie, "(?<=deviceid=).{32}");
             if (!match.Success)
             {
+                // Match failed
                 throw new XunleiLoginDeviceIdException("Device id cookie format error.");
             }
 
             StringBuilder SB = new StringBuilder("p=");
+            // Xunlei password, need encoding
             SB.Append(Tools.URLEncoding(password, Encoding.UTF8));
             SB.Append("&u=");
+            // Xunlei user name, need encoding
             SB.Append(Tools.URLEncoding(username, Encoding.UTF8));
+            // Default setting
             SB.Append("&verifycode=&login_enable=0&business_type=113&v=101&cachetime=");
             SB.Append(Tools.GetLongTimeStamp(DateTime.UtcNow));
             HttpHelper http = new HttpHelper();
             HttpItem item = new HttpItem()
             {
+                // Use the 32 chars to generate a md5 string for "csrf_token"
                 URL = string.Format("{0}sec2login/?csrf_token={1}", BaseURL, MD5Helper.HashString(match.Value)),
                 Encoding = Encoding.UTF8,
                 Timeout = Timeout,
@@ -165,8 +183,10 @@ namespace XunleiHomeCloud
                 ContentType = "application/x-www-form-urlencoded",
                 Method = "Post",
                 Postdata = SB.ToString(),
+                // Use the device id cookie, we did not have the xunlei cookie yet
                 Cookie = deviceIdCookie
             };
+            // Replace the ","
             return http.GetHtml(item).Cookie.Replace(";,", ";");
         }
 
@@ -192,6 +212,7 @@ namespace XunleiHomeCloud
         /// <returns>Cookies</returns>
         public static string Post(string username, string password)
         {
+            // Use a default user agent to get a device id cookie
             string deviceIdCookie = GenerateDeviceId();
             return Post(username, password, deviceIdCookie);
         }

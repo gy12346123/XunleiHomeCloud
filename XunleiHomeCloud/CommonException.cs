@@ -4,6 +4,11 @@ namespace XunleiHomeCloud
 {
     public class CommonException
     {
+        /// <summary>
+        /// Match the error code which xunlei returned and throw a exception
+        /// </summary>
+        /// <param name="code">Error code</param>
+        /// <param name="from">From which method or cs</param>
         public static void ErrorCode(int code, string from)
         {
             switch (code)
