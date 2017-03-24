@@ -130,8 +130,10 @@ namespace XunleiHomeCloud
         /// <returns>DeviceInfo[]</returns>
         public static DeviceInfo[] DeviceList()
         {
+            // Use default cookie
             if (!Cookie.CheckCookie())
             {
+                // Throw exception if the cookie not found
                 throw new XunleiNoCookieException("HomeCloud.DeviceList:Cookie not found.");
             }
             return DeviceList(Cookie.Cookies);
@@ -143,6 +145,7 @@ namespace XunleiHomeCloud
         /// <returns>Task<DeviceInfo[]></returns>
         public static Task<DeviceInfo[]> DeviceListAsync()
         {
+            // Use new task to get the device list
             return Task.Factory.StartNew(()=> {
                 return DeviceList();
             });
@@ -166,15 +169,21 @@ namespace XunleiHomeCloud
                 Cookie = cookie
             };
             string result = http.GetHtml(item).Html;
+            // Convert string to json
             var json = (JObject)JsonConvert.DeserializeObject(result);
+            // Get the status code
             int code = Convert.ToInt32(json["rtn"]);
+            // Normal query if return code = 0
             if (code == 0)
             {
+                // New some Deviceinfo use "peerList" count
                 DeviceInfo[] device = new DeviceInfo[json["peerList"].Count()];
+                // Get each "peerList" item
                 for (int i = 0; i < json["peerList"].Count(); i++)
                 {
                     device[i] = new DeviceInfo
                     {
+                        // Get the info we need, not all items
                         lastLoginTime = Convert.ToInt64(json["peerList"][i]["lastLoginTime"]),
                         localIP = json["peerList"][i]["localIP"].ToString(),
                         name = json["peerList"][i]["name"].ToString(),
@@ -189,6 +198,7 @@ namespace XunleiHomeCloud
                 return device;
             }else
             {
+                // Return error code, Match the error code map
                 CommonException.ErrorCode(code, "HomeCloud.DeviceList");
             }
 
@@ -247,41 +257,53 @@ namespace XunleiHomeCloud
         /// <returns>True:succeed, false:failed</returns>
         public static bool AddNewTask(DeviceInfo device, string url, string fileName, string cookie)
         {
+            // Use StringBuilder to generate the Post data
             StringBuilder SB = new StringBuilder("{\"path\":\"");
+            // Get the device default save file path use GetSetting_DefaultPath();
             SB.Append(GetSetting_DefaultPath(device, cookie));
+            // Add download task with a url
             SB.Append("\",\"tasks\":[{\"url\":\"");
             SB.Append(url);
+            // Add a file name
             SB.Append("\",\"name\":\"");
             SB.Append(fileName);
+            // Default setting
             SB.Append("\",\"gcid\":\"\",\"cid\":\"\",\"filesize\":0,\"ext_json\":{\"autoname\":1}}]}");
             HttpHelper http = new HttpHelper();
             HttpItem item = new HttpItem()
             {
+                // Use POST
                 Method = "POST",
                 URL = string.Format("{0}createTask?pid={1}&v=2&ct=0", XunleiBaseURL, device.pid),
                 Encoding = Encoding.UTF8,
                 Timeout = Timeout,
                 Referer = "http://yuancheng.xunlei.com/",
                 Host = "homecloud.yuancheng.xunlei.com",
+                // Encoding the Postdata to a URL format
                 Postdata = "json=" + Tools.URLEncoding(SB.ToString(), Encoding.UTF8),
                 PostEncoding = Encoding.UTF8,
                 Cookie = cookie,
+                // Need use this ContentType and Accept maybe
                 ContentType = "application/x-www-form-urlencoded",
                 Accept = "text/html, application/xhtml+xml, image/jxr, */*",
                 UserAgent = "Mozilla/5.0 (Windows NT 10.0; WOW64; Trident/7.0; rv:11.0) like Gecko",
+                // Need KeepAlive maybe
                 KeepAlive = true,
             };
             string result = http.GetHtml(item).Html;
             var json = (JObject)JsonConvert.DeserializeObject(result);
             int code = Convert.ToInt32(json["rtn"]);
+            // Normal query if code = 0
             if (code == 0)
             {
                 int resultCode = Convert.ToInt32(json["tasks"][0]["result"]);
+                // Normal query if "tasks" "result" return 0
                 if (resultCode == 0)
                 {
                     return true;
                 }else
                 {
+                    // Return error code, match the error code map
                     CommonException.ErrorCode(resultCode, "Xunlei.AddNewTask");
                 }
             }else
@@ -329,6 +351,7 @@ namespace XunleiHomeCloud
             int code = Convert.ToInt32(json["rtn"]);
             if (code == 0)
             {
+                // Normal query, return the default path
                 return json["defaultPath"].ToString();
             }
             else
@@ -401,6 +424,7 @@ namespace XunleiHomeCloud
             int code = Convert.ToInt32(json["rtn"]);
             if (code == 0)
             {
+                // Normal query, create a ListInfo
                 ListInfo list = new ListInfo
                 {
                     completeNum = Convert.ToInt32(json["completeNum"]),
@@ -410,18 +434,24 @@ namespace XunleiHomeCloud
                     serverFailNum = Convert.ToInt32(json["serverFailNum"]),
                     sync = Convert.ToInt32(json["sync"])
                 };
+                // Check the "tasks" key
                 if (json["tasks"].HasValues)
                 {
+                    // Create some TaskInfo use "tasks" count
                     TaskInfo[] task = new TaskInfo[json["tasks"].Count()];
+                    // Get each tasks item
                     for (int i = 0; i < json["tasks"].Count(); i++)
                     {
+                        // Get the value we need
                         task[i].completeTime = Convert.ToInt64(json["tasks"][i]["completeTime"]);
                         task[i].createTime = Convert.ToInt64(json["tasks"][i]["createTime"]);
                         task[i].downTime = Convert.ToInt32(json["tasks"][i]["downTime"]);
                         task[i].failCode = Convert.ToInt32(json["tasks"][i]["failCode"]);
                         task[i].id = Convert.ToInt64(json["tasks"][i]["id"]);
+                        // If "tasks" "i" "lixianChannel" has values
                         if (json["tasks"][i]["lixianChannel"].HasValues)
                         {
+                            // Get the "lixianChannel" values
                             task[i].lixianChannel = new LixianChannelInfo
                             {
                                 dlBytes = Convert.ToInt32(json["tasks"][i]["lixianChannel"]["dlBytes"]),
@@ -442,8 +472,10 @@ namespace XunleiHomeCloud
                         task[i].subList = json["tasks"][i]["subList"].ToString();
                         task[i].type = Convert.ToInt32(json["tasks"][i]["type"]);
                         task[i].url = json["tasks"][i]["url"].ToString();
+                        // If "tasks" "i" "lixianChannel" has values
                         if (json["tasks"][i]["vipChannel"].HasValues)
                         {
+                            // Get the "lixianChannel" values
                             task[i].vipChannel = new VipChannelInfo
                             {
                                 available = Convert.ToInt32(json["tasks"][i]["vipChannel"]["available"]),
@@ -532,6 +564,7 @@ namespace XunleiHomeCloud
             int code = Convert.ToInt32(json["rtn"]);
             if (code == 0)
             {
+                // Not all values maybe
                 return new SettingInfo {
                     autoDlSubtitle = Convert.ToInt32(json["autoDlSubtitle"]),
                     autoOpenLixian = Convert.ToInt32(json["autoOpenLixian"]),
@@ -594,6 +627,7 @@ namespace XunleiHomeCloud
 
         /// <summary>
         /// Set Setting
+        /// TODO: need test
         /// </summary>
         /// <param name="device">Xunlei home cloud device</param>
         /// <param name="cookie">Xunlei cookies</param>
