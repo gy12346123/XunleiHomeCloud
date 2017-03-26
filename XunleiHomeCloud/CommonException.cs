@@ -102,5 +102,19 @@ namespace XunleiHomeCloud
         public XunleiCookiesParamException(string message) : base(message) { }
         public XunleiCookiesParamException(string message, Exception inner) : base(message, inner) { }
     }
+
+    public class XunleiDeviceSpaceException : ApplicationException
+    {
+        public XunleiDeviceSpaceException() { }
+        public XunleiDeviceSpaceException(string message) : base(message) { }
+        public XunleiDeviceSpaceException(string message, Exception inner) : base(message, inner) { }
+    }
+
+    public class XunleiDeviceNoSavePathException : ApplicationException
+    {
+        public XunleiDeviceNoSavePathException() { }
+        public XunleiDeviceNoSavePathException(string message) : base(message) { }
+        public XunleiDeviceNoSavePathException(string message, Exception inner) : base(message, inner) { }
+    }
     #endregion
 }

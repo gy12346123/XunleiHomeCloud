@@ -44,6 +44,15 @@ namespace XunleiHomeCloud
         }
 
         /// <summary>
+        /// Xunlei home cloud device free space info struct
+        /// </summary>
+        public struct SpaceInfo
+        {
+            public string path;
+            public long remain;
+        }
+
+        /// <summary>
         /// tasks.lixianChannel
         /// </summary>
         public struct LixianChannelInfo
@@ -291,6 +300,93 @@ namespace XunleiHomeCloud
         {
             return Task.Factory.StartNew(() => {
                 return RenameDevice(device, newName);
+            });
+        }
+
+        /// <summary>
+        /// Get xunlei home cloud device of free space
+        /// </summary>
+        /// <param name="device">Xunlei home cloud device</param>
+        /// <param name="cookie">Xunlei cookies</param>
+        /// <returns>SpaceInfo[]</returns>
+        public static SpaceInfo[] FreeSpace(DeviceInfo device, string cookie)
+        {
+            HttpHelper http = new HttpHelper();
+            HttpItem item = new HttpItem()
+            {
+                URL = string.Format("{0}boxSpace?pid={1}&v=2&ct=0", XunleiBaseURL, device.pid),
+                Encoding = Encoding.UTF8,
+                Timeout = Timeout,
+                Referer = "http://yuancheng.xunlei.com/",
+                Host = "homecloud.yuancheng.xunlei.com",
+                Cookie = cookie,
+                Accept = "application/javascript, */*;q=0.8"
+            };
+            string result = http.GetHtml(item).Html;
+            var json = (JObject)JsonConvert.DeserializeObject(result);
+            int code = Convert.ToInt32(json["rtn"]);
+            if (code == 0)
+            {
+                int pathCount = json["space"].Count();
+                if (pathCount > 0)
+                {
+                    SpaceInfo[] info = new SpaceInfo[pathCount];
+                    for (int i = 0; i < pathCount; i++)
+                    {
+                        info[i] = new SpaceInfo {
+                            path = json["space"][i]["path"].ToString(),
+                            remain = Convert.ToInt64(json["space"][i]["remain"])
+                        };
+                    }
+                    return info;
+                }else
+                {
+                    // No save path
+                    throw new XunleiDeviceNoSavePathException("HomeCloud.FreeSpace: No save path exist, so no free space.");
+                }
+            }else
+            {
+                CommonException.ErrorCode(code, "HomeCloud.FreeSpace");
+            }
+            throw new XunleiDeviceSpaceException("HomeCloud.FreeSpace: Get device free space error.");
+        }
+
+        /// <summary>
+        /// Get xunlei home cloud device of free space
+        /// </summary>
+        /// <param name="device">Xunlei home cloud device</param>
+        /// <returns>SpaceInfo[]</returns>
+        public static SpaceInfo[] FreeSpace(DeviceInfo device)
+        {
+            if (!Cookie.CheckCookie())
+            {
+                throw new XunleiNoCookieException("HomeCloud.FreeSpace:Cookie not found.");
+            }
+            return FreeSpace(device, Cookie.Cookies);
+        }
+
+        /// <summary>
+        /// Get xunlei home cloud device of free space
+        /// </summary>
+        /// <param name="device">Xunlei home cloud device</param>
+        /// <param name="cookie">Xunlei cookies</param>
+        /// <returns>Task<SpaceInfo[]></returns>
+        public static Task<SpaceInfo[]> FreeSpaceAsync(DeviceInfo device, string cookie)
+        {
+            return Task.Factory.StartNew(()=> {
+                return FreeSpace(device, cookie);
+            });
+        }
+
+        /// <summary>
+        /// Get xunlei home cloud device of free space
+        /// </summary>
+        /// <param name="device">Xunlei home cloud device</param>
+        /// <returns>Task<SpaceInfo[]></returns>
+        public static Task<SpaceInfo[]> FreeSpaceAsync(DeviceInfo device)
+        {
+            return Task.Factory.StartNew(() => {
+                return FreeSpace(device);
             });
         }
 
