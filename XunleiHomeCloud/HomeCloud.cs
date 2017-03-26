@@ -579,14 +579,15 @@ namespace XunleiHomeCloud
         /// <param name="device">Xunlei home cloud device</param>
         /// <param name="cookie">Xunlei cookies</param>
         /// <param name="number">Hit list number</param>
+        /// <param name="position">Get task items start with</param>
         /// <param name="type">Task type, 0:Downloading, 1:Finished, 2:Trash, 3:Failed</param>
         /// <returns>ListInfo</returns>
-        public static ListInfo TaskList(DeviceInfo device, string cookie, int number = 10, int type = 0)
+        public static ListInfo TaskList(DeviceInfo device, string cookie, int number = 10, int position = 0, int type = 0)
         {
             HttpHelper http = new HttpHelper();
             HttpItem item = new HttpItem()
             {
-                URL = string.Format("{0}list?pid={1}&type={2}&pos=0&number={3}&needUrl=1&v=2&ct=0", XunleiBaseURL, device.pid, type, number),
+                URL = string.Format("{0}list?pid={1}&type={2}&pos={3}&number={4}&needUrl=1&v=2&ct=0", XunleiBaseURL, device.pid, type, position, number),
                 Encoding = Encoding.UTF8,
                 Timeout = Timeout,
                 Referer = "http://yuancheng.xunlei.com/",
@@ -677,14 +678,16 @@ namespace XunleiHomeCloud
         /// </summary>
         /// <param name="device">Xunlei home cloud device</param>
         /// <param name="number">Hit list number</param>
+        /// <param name="position">Get task items start with</param>
+        /// <param name="type">Task type, 0:Downloading, 1:Finished, 2:Trash, 3:Failed</param>
         /// <returns>ListInfo</returns>
-        public static ListInfo TaskList(DeviceInfo device, int number = 10, int type = 0)
+        public static ListInfo TaskList(DeviceInfo device, int number = 10, int position = 0, int type = 0)
         {
             if (!Cookie.CheckCookie())
             {
                 throw new XunleiNoCookieException("HomeCloud.TaskList:Cookie not found.");
             }
-            return TaskList(device, Cookie.Cookies, number, type);
+            return TaskList(device, Cookie.Cookies, number, position, type);
         }
 
         /// <summary>
@@ -693,11 +696,13 @@ namespace XunleiHomeCloud
         /// <param name="device">Xunlei home cloud device</param>
         /// <param name="cookie">Xunlei cookies</param>
         /// <param name="number">Hit list number</param>
+        /// <param name="position">Get task items start with</param>
+        /// <param name="type">Task type, 0:Downloading, 1:Finished, 2:Trash, 3:Failed</param>
         /// <returns>Task<ListInfo></returns>
-        public static Task<ListInfo> TaskListAsync(DeviceInfo device, string cookie, int number = 10, int type = 0)
+        public static Task<ListInfo> TaskListAsync(DeviceInfo device, string cookie, int number = 10, int position = 0, int type = 0)
         {
             return Task.Factory.StartNew(()=> {
-                return TaskList(device, cookie, number, type);
+                return TaskList(device, cookie, number, position, type);
             });
         }
 
@@ -706,11 +711,13 @@ namespace XunleiHomeCloud
         /// </summary>
         /// <param name="device">Xunlei home cloud device</param>
         /// <param name="number">Hit list number</param>
+        /// <param name="position">Get task items start with</param>
+        /// <param name="type">Task type, 0:Downloading, 1:Finished, 2:Trash, 3:Failed</param>
         /// <returns>Task<ListInfo></returns>
-        public static Task<ListInfo> TaskListAsync(DeviceInfo device, int number = 10, int type = 0)
+        public static Task<ListInfo> TaskListAsync(DeviceInfo device, int number = 10, int position = 0, int type = 0)
         {
             return Task.Factory.StartNew(()=> {
-                return TaskList(device, number, type);
+                return TaskList(device, number, position, type);
             });
         }
 
