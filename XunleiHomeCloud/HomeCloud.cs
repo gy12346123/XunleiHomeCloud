@@ -579,13 +579,14 @@ namespace XunleiHomeCloud
         /// <param name="device">Xunlei home cloud device</param>
         /// <param name="cookie">Xunlei cookies</param>
         /// <param name="number">Hit list number</param>
+        /// <param name="type">Task type, 0:Downloading, 1:Finished, 2:Trash, 3:Failed</param>
         /// <returns>ListInfo</returns>
-        public static ListInfo TaskList(DeviceInfo device, string cookie, int number = 10)
+        public static ListInfo TaskList(DeviceInfo device, string cookie, int number = 10, int type = 0)
         {
             HttpHelper http = new HttpHelper();
             HttpItem item = new HttpItem()
             {
-                URL = string.Format("{0}list?pid={1}&type=0&pos=0&number={2}&needUrl=1&v=2&ct=0", XunleiBaseURL, device.pid, number),
+                URL = string.Format("{0}list?pid={1}&type={2}&pos=0&number={3}&needUrl=1&v=2&ct=0", XunleiBaseURL, device.pid, type, number),
                 Encoding = Encoding.UTF8,
                 Timeout = Timeout,
                 Referer = "http://yuancheng.xunlei.com/",
@@ -677,13 +678,13 @@ namespace XunleiHomeCloud
         /// <param name="device">Xunlei home cloud device</param>
         /// <param name="number">Hit list number</param>
         /// <returns>ListInfo</returns>
-        public static ListInfo TaskList(DeviceInfo device, int number = 10)
+        public static ListInfo TaskList(DeviceInfo device, int number = 10, int type = 0)
         {
             if (!Cookie.CheckCookie())
             {
                 throw new XunleiNoCookieException("HomeCloud.TaskList:Cookie not found.");
             }
-            return TaskList(device, Cookie.Cookies, number);
+            return TaskList(device, Cookie.Cookies, number, type);
         }
 
         /// <summary>
@@ -693,10 +694,10 @@ namespace XunleiHomeCloud
         /// <param name="cookie">Xunlei cookies</param>
         /// <param name="number">Hit list number</param>
         /// <returns>Task<ListInfo></returns>
-        public static Task<ListInfo> TaskListAsync(DeviceInfo device, string cookie, int number = 10)
+        public static Task<ListInfo> TaskListAsync(DeviceInfo device, string cookie, int number = 10, int type = 0)
         {
             return Task.Factory.StartNew(()=> {
-                return TaskList(device, cookie, number);
+                return TaskList(device, cookie, number, type);
             });
         }
 
@@ -706,10 +707,10 @@ namespace XunleiHomeCloud
         /// <param name="device">Xunlei home cloud device</param>
         /// <param name="number">Hit list number</param>
         /// <returns>Task<ListInfo></returns>
-        public static Task<ListInfo> TaskListAsync(DeviceInfo device, int number = 10)
+        public static Task<ListInfo> TaskListAsync(DeviceInfo device, int number = 10, int type = 0)
         {
             return Task.Factory.StartNew(()=> {
-                return TaskList(device, number);
+                return TaskList(device, number, type);
             });
         }
 
