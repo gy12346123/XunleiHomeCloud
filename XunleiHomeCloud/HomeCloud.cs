@@ -218,6 +218,83 @@ namespace XunleiHomeCloud
         }
 
         /// <summary>
+        /// Rename device name
+        /// </summary>
+        /// <param name="device">Xunlei home cloud device</param>
+        /// <param name="newName">New device name</param>
+        /// <param name="cookie">Xunlei cookies</param>
+        /// <returns>Rename succeed or not</returns>
+        public static bool RenameDevice(DeviceInfo device, string newName, string cookie)
+        {
+            HttpHelper http = new HttpHelper();
+            HttpItem item = new HttpItem()
+            {
+                URL = string.Format("{0}rename?pid={1}&boxName={2}&v=2&ct=0", XunleiBaseURL, device.pid, Tools.URLEncoding(newName, Encoding.UTF8)),
+                Encoding = Encoding.UTF8,
+                Timeout = Timeout,
+                Referer = "http://yuancheng.xunlei.com/",
+                Host = "homecloud.yuancheng.xunlei.com",
+                Cookie = cookie,
+                Accept = "application/javascript, */*;q=0.8"
+            };
+            string result = http.GetHtml(item).Html;
+            var json = (JObject)JsonConvert.DeserializeObject(result);
+            int code = Convert.ToInt32(json["rtn"]);
+            if (code == 0)
+            {
+                return true;
+            }else
+            {
+                CommonException.ErrorCode(code, "Xunlei.RenameDevice");
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Rename device name
+        /// </summary>
+        /// <param name="device">Xunlei home cloud device</param>
+        /// <param name="newName">New device name</param>
+        /// <returns>Rename succeed or not</returns>
+        public static bool RenameDevice(DeviceInfo device, string newName)
+        {
+            // Use default cookie
+            if (!Cookie.CheckCookie())
+            {
+                // Throw exception if the cookie not found
+                throw new XunleiNoCookieException("HomeCloud.RenameDevice:Cookie not found.");
+            }
+            return RenameDevice(device, newName, Cookie.Cookies);
+        }
+
+        /// <summary>
+        /// Rename device name
+        /// </summary>
+        /// <param name="device">Xunlei home cloud device</param>
+        /// <param name="newName">New device name</param>
+        /// <param name="cookie">Xunlei cookies</param>
+        /// <returns>Task<bool></returns>
+        public static Task<bool> RenameDeviceAsync(DeviceInfo device, string newName, string cookie)
+        {
+            return Task.Factory.StartNew(()=> {
+                return RenameDevice(device, newName, cookie);
+            });
+        }
+
+        /// <summary>
+        /// Rename device name
+        /// </summary>
+        /// <param name="device">Xunlei home cloud device</param>
+        /// <param name="newName">New device name</param>
+        /// <returns>Task<bool></returns>
+        public static Task<bool> RenameDeviceAsync(DeviceInfo device, string newName)
+        {
+            return Task.Factory.StartNew(() => {
+                return RenameDevice(device, newName);
+            });
+        }
+
+        /// <summary>
         /// Add new download task into device
         /// </summary>
         /// <param name="device">Xunlei home cloud device</param>
