@@ -902,5 +902,76 @@ namespace XunleiHomeCloud
                 return PostSetting(device, maxRunTaskNumber, slStartTime, slEndTime, downloadSpeedLimit, uploadSpeedLimit, autoDlSubtitle, autoOpenLixian, autoOpenVip);
             });
         }
+
+        /// <summary>
+        /// Active xunlei home cloud device use a activity key
+        /// </summary>
+        /// <param name="key">Activity key</param>
+        /// <param name="cookie">Xunlei cookies</param>
+        /// <returns>Succeed or not</returns>
+        public static bool ActiveDevice(string key, string cookie)
+        {
+            HttpHelper http = new HttpHelper();
+            HttpItem item = new HttpItem()
+            {
+                URL = string.Format("{0}bind?boxName=&key={1}&v=2&ct=0", XunleiBaseURL, key),
+                Encoding = Encoding.UTF8,
+                Timeout = Timeout,
+                Referer = "http://yuancheng.xunlei.com/",
+                Host = "homecloud.yuancheng.xunlei.com",
+                Cookie = cookie,
+                Accept = "application/javascript, */*;q=0.8"
+            };
+            string result = http.GetHtml(item).Html;
+            var json = (JObject)JsonConvert.DeserializeObject(result);
+            int code = Convert.ToInt32(json["rtn"]);
+            if (code == 0)
+            {
+                return true;
+            }else
+            {
+                CommonException.ErrorCode(code, "HomeCloud.ActiveDevice");
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Active xunlei home cloud device use a activity key
+        /// </summary>
+        /// <param name="key">Activity key</param>
+        /// <returns>Succeed or not</returns>
+        public static bool ActiveDevice(string key)
+        {
+            if (!Cookie.CheckCookie())
+            {
+                throw new XunleiNoCookieException("HomeCloud.ActiveDevice:Cookie not found.");
+            }
+            return ActiveDevice(key, Cookie.Cookies);
+        }
+
+        /// <summary>
+        /// Active xunlei home cloud device use a activity key
+        /// </summary>
+        /// <param name="key">Activity key</param>
+        /// <param name="cookie">Xunlei cookies</param>
+        /// <returns>Task<bool></returns>
+        public static Task<bool> ActiveDeviceAsync(string key, string cookie)
+        {
+            return Task.Factory.StartNew(()=> {
+                return ActiveDevice(key, cookie);
+            });
+        }
+
+        /// <summary>
+        /// Active xunlei home cloud device use a activity key
+        /// </summary>
+        /// <param name="key">Activity key</param>
+        /// <returns>Task<bool></returns>
+        public static Task<bool> ActiveDeviceAsync(string key)
+        {
+            return Task.Factory.StartNew(() => {
+                return ActiveDevice(key);
+            });
+        }
     }
 }

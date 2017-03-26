@@ -13,6 +13,10 @@ namespace XunleiHomeCloud
         {
             switch (code)
             {
+                case 103:
+                    throw new XunleiActivityKeyNotFoundException(string.Format("{0}: Activity key not found.", from));
+                case 104:
+                    throw new XunleiActivityKeyInvalidException(string.Format("{0}: Activity key invalid.", from));
                 case 202:
                     throw new XunleiRepeatTaskException(string.Format("{0}: Repeat task, skip.", from));
                 case 403:
@@ -21,6 +25,8 @@ namespace XunleiHomeCloud
                     throw new XunleiConnectionException(string.Format("{0}: Device client connection error.", from));
                 case 1004:
                     throw new XunleiUserNotLoginException(string.Format("{0}: User not login.", from));
+                default:
+                    throw new XunleiErrorCodeNotHandleException(string.Format("{0}: Error code not handle.", from));
             }
         }
     }
@@ -115,6 +121,27 @@ namespace XunleiHomeCloud
         public XunleiDeviceNoSavePathException() { }
         public XunleiDeviceNoSavePathException(string message) : base(message) { }
         public XunleiDeviceNoSavePathException(string message, Exception inner) : base(message, inner) { }
+    }
+
+    public class XunleiActivityKeyNotFoundException : ApplicationException
+    {
+        public XunleiActivityKeyNotFoundException() { }
+        public XunleiActivityKeyNotFoundException(string message) : base(message) { }
+        public XunleiActivityKeyNotFoundException(string message, Exception inner) : base(message, inner) { }
+    }
+
+    public class XunleiActivityKeyInvalidException : ApplicationException
+    {
+        public XunleiActivityKeyInvalidException() { }
+        public XunleiActivityKeyInvalidException(string message) : base(message) { }
+        public XunleiActivityKeyInvalidException(string message, Exception inner) : base(message, inner) { }
+    }
+
+    public class XunleiErrorCodeNotHandleException : ApplicationException
+    {
+        public XunleiErrorCodeNotHandleException() { }
+        public XunleiErrorCodeNotHandleException(string message) : base(message) { }
+        public XunleiErrorCodeNotHandleException(string message, Exception inner) : base(message, inner) { }
     }
     #endregion
 }
