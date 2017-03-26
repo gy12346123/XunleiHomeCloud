@@ -808,16 +808,15 @@ namespace XunleiHomeCloud
 
         /// <summary>
         /// Set Setting
-        /// TODO: need test
         /// </summary>
         /// <param name="device">Xunlei home cloud device</param>
         /// <param name="cookie">Xunlei cookies</param>
         /// <param name="maxRunTaskNumber">Max running task number</param>
-        /// <param name="slStartTime"></param>
-        /// <param name="slEndTime"></param>
+        /// <param name="slStartTime">Speed limit start time, example:0</param>
+        /// <param name="slEndTime">Speed limit end time, example:24</param>
         /// <param name="downloadSpeedLimit">Max download speed</param>
-        /// <param name="uploadSpeedLimit">Max upload speed</param>
-        /// <param name="autoDlSubtitle"></param>
+        /// <param name="uploadSpeedLimit">Max upload speed, the Minimum value is 10</param>
+        /// <param name="autoDlSubtitle">Auto download subtitle</param>
         /// <param name="autoOpenLixian">1:Auto open, 0:not</param>
         /// <param name="autoOpenVip">1:Auto open, 0:not</param>
         /// <returns>True:succeed, false:failed</returns>
@@ -847,17 +846,16 @@ namespace XunleiHomeCloud
             throw new XunleiSettingException("HomeCloud.PostSetting:Return error code.");
         }
 
-
         /// <summary>
         /// Set Setting use cookies
         /// </summary>
         /// <param name="device">Xunlei home cloud device</param>
         /// <param name="maxRunTaskNumber">Max running task number</param>
-        /// <param name="slStartTime"></param>
-        /// <param name="slEndTime"></param>
+        /// <param name="slStartTime">Speed limit start time, example:0</param>
+        /// <param name="slEndTime">Speed limit end time, example:24</param>
         /// <param name="downloadSpeedLimit">Max download speed</param>
-        /// <param name="uploadSpeedLimit">Max upload speed</param>
-        /// <param name="autoDlSubtitle"></param>
+        /// <param name="uploadSpeedLimit">Max upload speed, the Minimum value is 10</param>
+        /// <param name="autoDlSubtitle">Auto download subtitle</param>
         /// <param name="autoOpenLixian">1:Auto open, 0:not</param>
         /// <param name="autoOpenVip">1:Auto open, 0:not</param>
         /// <returns>True:succeed, false:failed</returns>
@@ -875,12 +873,40 @@ namespace XunleiHomeCloud
         /// </summary>
         /// <param name="device">Xunlei home cloud device</param>
         /// <param name="cookie">Xunlei cookies</param>
+        /// <param name="info">SettingInfo, need fill all of them</param>
+        /// <returns>True:succeed, false:failed</returns>
+        public static bool PostSetting(DeviceInfo device, string cookie, SettingInfo info)
+        {
+            return PostSetting(device, cookie, info.maxRunTaskNumber, info.slStartTime, info.slEndTime, info.downloadSpeedLimit, info.uploadSpeedLimit, info.autoDlSubtitle, info.autoOpenLixian, info.autoOpenVip);
+        }
+
+        /// <summary>
+        /// Set Setting
+        /// </summary>
+        /// <param name="device">Xunlei home cloud device</param>
+        /// <param name="cookie">Xunlei cookies</param>
+        /// <param name="info">SettingInfo, need fill all of them</param>
+        /// <returns>True:succeed, false:failed</returns>
+        public static bool PostSetting(DeviceInfo device, SettingInfo info)
+        {
+            if (!Cookie.CheckCookie())
+            {
+                throw new XunleiNoCookieException("HomeCloud.PostSetting:Cookie not found.");
+            }
+            return PostSetting(device, Cookie.Cookies, info);
+        }
+
+        /// <summary>
+        /// Set Setting
+        /// </summary>
+        /// <param name="device">Xunlei home cloud device</param>
+        /// <param name="cookie">Xunlei cookies</param>
         /// <param name="maxRunTaskNumber">Max running task number</param>
-        /// <param name="slStartTime"></param>
-        /// <param name="slEndTime"></param>
+        /// <param name="slStartTime">Speed limit start time, example:0</param>
+        /// <param name="slEndTime">Speed limit end time, example:24</param>
         /// <param name="downloadSpeedLimit">Max download speed</param>
-        /// <param name="uploadSpeedLimit">Max upload speed</param>
-        /// <param name="autoDlSubtitle"></param>
+        /// <param name="uploadSpeedLimit">Max upload speed, the Minimum value is 10</param>
+        /// <param name="autoDlSubtitle">Auto download subtitle</param>
         /// <param name="autoOpenLixian">1:Auto open, 0:not</param>
         /// <param name="autoOpenVip">1:Auto open, 0:not</param>
         /// <returns>Task<bool></returns>
@@ -896,11 +922,11 @@ namespace XunleiHomeCloud
         /// </summary>
         /// <param name="device">Xunlei home cloud device</param>
         /// <param name="maxRunTaskNumber">Max running task number</param>
-        /// <param name="slStartTime"></param>
-        /// <param name="slEndTime"></param>
+        /// <param name="slStartTime">Speed limit start time, example:0</param>
+        /// <param name="slEndTime">Speed limit end time, example:24</param>
         /// <param name="downloadSpeedLimit">Max download speed</param>
-        /// <param name="uploadSpeedLimit">Max upload speed</param>
-        /// <param name="autoDlSubtitle"></param>
+        /// <param name="uploadSpeedLimit">Max upload speed, the Minimum value is 10</param>
+        /// <param name="autoDlSubtitle">Auto download subtitle</param>
         /// <param name="autoOpenLixian">1:Auto open, 0:not</param>
         /// <param name="autoOpenVip">1:Auto open, 0:not</param>
         /// <returns>Task<bool></returns>
@@ -908,6 +934,33 @@ namespace XunleiHomeCloud
         {
             return Task.Factory.StartNew(()=> {
                 return PostSetting(device, maxRunTaskNumber, slStartTime, slEndTime, downloadSpeedLimit, uploadSpeedLimit, autoDlSubtitle, autoOpenLixian, autoOpenVip);
+            });
+        }
+
+        /// <summary>
+        /// Set Setting
+        /// </summary>
+        /// <param name="device">Xunlei home cloud device</param>
+        /// <param name="cookie">Xunlei cookies</param>
+        /// <param name="info">SettingInfo, need fill all of them</param>
+        /// <returns>Task<bool></returns>
+        public static Task<bool> PostSettingAsync(DeviceInfo device, string cookie, SettingInfo info)
+        {
+            return Task.Factory.StartNew(()=> {
+                return PostSetting(device, cookie, info);
+            });
+        }
+
+        /// <summary>
+        /// Set Setting
+        /// </summary>
+        /// <param name="device">Xunlei home cloud device</param>
+        /// <param name="info">SettingInfo, need fill all of them</param>
+        /// <returns>Task<bool></returns>
+        public static Task<bool> PostSettingAsync(DeviceInfo device, SettingInfo info)
+        {
+            return Task.Factory.StartNew(() => {
+                return PostSetting(device, info);
             });
         }
 
