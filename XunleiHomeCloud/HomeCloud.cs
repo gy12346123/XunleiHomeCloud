@@ -1469,5 +1469,114 @@ namespace XunleiHomeCloud
                 return PauseTask(device, task);
             });
         }
+
+        /// <summary>
+        /// Start the xunlei home cloud task
+        /// </summary>
+        /// <param name="device">Xunlei home cloud device</param>
+        /// <param name="id">ListInfo.task[i].id, task id which need start</param>
+        /// <param name="state">ListInfo.task[i].state, task state now</param>
+        /// <param name="cookie">Xunlei cookies</param>
+        /// <returns>Start succeed or not</returns>
+        public static bool StartTask(DeviceInfo device, long id, int state, string cookie)
+        {
+            HttpHelper http = new HttpHelper();
+            HttpItem item = new HttpItem()
+            {
+                URL = string.Format("{0}start?pid={1}&tasks={2}_{3}&v=2&ct=0", XunleiBaseURL, device.pid, id, state),
+                Encoding = Encoding.UTF8,
+                Timeout = Timeout,
+                Referer = "http://yuancheng.xunlei.com/",
+                Host = "homecloud.yuancheng.xunlei.com",
+                Cookie = cookie,
+                Accept = "application/javascript, */*;q=0.8",
+                KeepAlive = true
+            };
+            string result = http.GetHtml(item).Html;
+            var json = (JObject)JsonConvert.DeserializeObject(result);
+            int code = Convert.ToInt32(json["rtn"]);
+            if (code == 0)
+            {
+                return true;
+            }
+            else
+            {
+                CommonException.ErrorCode(code, "HomeCloud.StartTask");
+            }
+            throw new XunleiErrorCodeNotHandleException("HomeCloud.StartTask");
+        }
+
+        /// <summary>
+        /// Start the xunlei home cloud task
+        /// </summary>
+        /// <param name="device">Xunlei home cloud device</param>
+        /// <param name="id">ListInfo.task[i].id, task id which need start</param>
+        /// <param name="state">ListInfo.task[i].state, task state now</param>
+        /// <returns>Start succeed or not</returns>
+        public static bool StartTask(DeviceInfo device, long id, int state)
+        {
+            if (!Cookie.CheckCookie())
+            {
+                throw new XunleiNoCookieException("HomeCloud.StartTask:Cookie not found.");
+            }
+            return StartTask(device, id, state, Cookie.Cookies);
+        }
+
+        /// <summary>
+        /// Start the xunlei home cloud task
+        /// </summary>
+        /// <param name="device">Xunlei home cloud device</param>
+        /// <param name="task">TaskInfo from ListInfo, Use HomeCloud.TaskList() to get info</param>
+        /// <returns>Start succeed or not</returns>
+        public static bool StartTask(DeviceInfo device, TaskInfo task)
+        {
+            if (!Cookie.CheckCookie())
+            {
+                throw new XunleiNoCookieException("HomeCloud.StartTask:Cookie not found.");
+            }
+            return StartTask(device, task.id, task.state, Cookie.Cookies);
+        }
+
+        /// <summary>
+        /// Start the xunlei home cloud task
+        /// </summary>
+        /// <param name="device">Xunlei home cloud device</param>
+        /// <param name="id">ListInfo.task[i].id, task id which need start</param>
+        /// <param name="state">ListInfo.task[i].state, task state now</param>
+        /// <param name="cookie">Xunlei cookies</param>
+        /// <returns>Task<bool></returns>
+        public static Task<bool> StartTaskAsync(DeviceInfo device, long id, int state, string cookie)
+        {
+            return Task.Factory.StartNew(() => {
+                return StartTask(device, id, state, cookie);
+            });
+        }
+
+        /// <summary>
+        /// Start the xunlei home cloud task
+        /// </summary>
+        /// <param name="device">Xunlei home cloud device</param>
+        /// <param name="id">ListInfo.task[i].id, task id which need start</param>
+        /// <param name="state">ListInfo.task[i].state, task state now</param>
+        /// <returns>Task<bool></returns>
+        public static Task<bool> StartTaskAsync(DeviceInfo device, long id, int state)
+        {
+            return Task.Factory.StartNew(() => {
+                return StartTask(device, id, state);
+            });
+        }
+
+        /// <summary>
+        /// Start the xunlei home cloud task
+        /// </summary>
+        /// <param name="device">Xunlei home cloud device</param>
+        /// <param name="task">TaskInfo from ListInfo, Use HomeCloud.TaskList() to get info</param>
+        /// <returns>Task<bool></returns>
+        public static Task<bool> StartTaskAsync(DeviceInfo device, TaskInfo task)
+        {
+            return Task.Factory.StartNew(() => {
+                return StartTask(device, task);
+            });
+        }
     }
 }
