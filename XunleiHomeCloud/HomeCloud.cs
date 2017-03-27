@@ -415,7 +415,7 @@ namespace XunleiHomeCloud
         }
 
         /// <summary>
-        /// Add new download task into device
+        /// Add new download task into device use a url
         /// </summary>
         /// <param name="device">Xunlei home cloud device</param>
         /// <param name="url">Resource url which need download</param>
@@ -431,7 +431,7 @@ namespace XunleiHomeCloud
         }
 
         /// <summary>
-        /// Add new download task into device
+        /// Add new download task into device use a url
         /// </summary>
         /// <param name="device">Xunlei home cloud device</param>
         /// <param name="url">Resource url which need download</param>
@@ -445,7 +445,7 @@ namespace XunleiHomeCloud
         }
 
         /// <summary>
-        /// Add new download task into device
+        /// Add new download task into device use a url
         /// </summary>
         /// <param name="device">Xunlei home cloud device</param>
         /// <param name="url">Resource url which need download</param>
@@ -511,7 +511,7 @@ namespace XunleiHomeCloud
         }
 
         /// <summary>
-        /// Add new download task into device
+        /// Add new download task into device use a url
         /// </summary>
         /// <param name="device">Xunlei home cloud device</param>
         /// <param name="url">Resource url which need download</param>
@@ -522,6 +522,148 @@ namespace XunleiHomeCloud
         {
             return Task.Factory.StartNew(()=> {
                 return AddNewTask(device, url, fileName, cookie);
+            });
+        }
+
+        /// <summary>
+        /// Add new download task into device use local torrent file
+        /// </summary>
+        /// <param name="device">Xunlei home cloud device</param>
+        /// <param name="savePath">Xunlei home cloud save path</param>
+        /// <param name="infoHash">BTCheckerInfo.infohash</param>
+        /// <param name="name">torrentInfo.taskInfo.name</param>
+        /// <param name="btSub">torrentInfo.taskInfo.id, select need download contents</param>
+        /// <param name="cookie">Xunlei cookies</param>
+        /// <returns>Download running or not</returns>
+        public static bool AddNewTask(DeviceInfo device, string savePath, string infoHash, string name, int[] btSub, string cookie)
+        {
+            StringBuilder SB = new StringBuilder("json=");
+            SB.Append(Tools.URLEncoding("{", Encoding.UTF8));
+            SB.Append(Tools.URLEncoding(string.Format("\"path\":\"{0}\",\"infohash\":\"{1}\",\"name\":\"{2}\",\"btSub\":[", savePath, infoHash, name), Encoding.UTF8));
+            foreach (int sub in btSub)
+            {
+                SB.Append(Tools.URLEncoding(string.Format("{0},", sub), Encoding.UTF8));
+            }
+            SB.Remove(SB.Length - 3, 3);
+            SB.Append(Tools.URLEncoding("]}", Encoding.UTF8));
+
+            HttpHelper http = new HttpHelper();
+            HttpItem item = new HttpItem()
+            {
+                Method = "POST",
+                URL = string.Format("{0}createBtTask?pid={1}&v=2&ct=0", XunleiBaseURL, device.pid),
+                Encoding = Encoding.UTF8,
+                Timeout = Timeout,
+                Referer = "http://yuancheng.xunlei.com/",
+                Host = "homecloud.yuancheng.xunlei.com",
+                PostDataType = PostDataType.String,
+                Postdata = SB.ToString(),
+                PostEncoding = Encoding.UTF8,
+                Cookie = cookie,
+                ContentType = "application/x-www-form-urlencoded",
+                Accept = "text/html, application/xhtml+xml, image/jxr, */*",
+                KeepAlive = true,
+            };
+            string result = http.GetHtml(item).Html;
+            var json = (JObject)JsonConvert.DeserializeObject(result);
+            int code = Convert.ToInt32(json["rtn"]);
+            if (code == 0)
+            {
+                return true;
+            }else
+            {
+                CommonException.ErrorCode(code, "HomeCloud.AddNewTask");
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Add new download task into device use local torrent file
+        /// </summary>
+        /// <param name="device">Xunlei home cloud device</param>
+        /// <param name="savePath">Local torrent file path</param>
+        /// <param name="infoHash">BTCheckerInfo.infohash</param>
+        /// <param name="name">torrentInfo.taskInfo.name</param>
+        /// <param name="btSub">torrentInfo.taskInfo.subList.id, select need download contents</param>
+        /// <returns>Download running or not</returns>
+        public static bool AddNewTask(DeviceInfo device, string savePath, string infoHash, string name, int[] btSub)
+        {
+            if (!Cookie.CheckCookie())
+            {
+                throw new XunleiNoCookieException("HomeCloud.AddNewTask:Cookie not found.");
+            }
+            return AddNewTask(device, savePath, infoHash, name, btSub, Cookie.Cookies);
+        }
+
+        /// <summary>
+        /// Add new download task into device use local torrent file
+        /// </summary>
+        /// <param name="device">Xunlei home cloud device</param>
+        /// <param name="path">Local torrent file path</param>
+        /// <returns>Download running or not</returns>
+        public static bool AddNewTask(DeviceInfo device, string path)
+        {
+            if (!Cookie.CheckCookie())
+            {
+                throw new XunleiNoCookieException("HomeCloud.AddNewTask:Cookie not found.");
+            }
+            var torrentInfo = HomeCloud.CheckTorrent(device, path);
+            int countId = torrentInfo.taskInfo.subList.Count();
+            if (countId > 0)
+            {
+                int[] id = new int[countId];
+                for (int i = 0; i < countId; i++)
+                {
+                    id[i] = torrentInfo.taskInfo.subList[i].id;
+                }
+                return AddNewTask(device, HomeCloud.GetSetting_DefaultPath(device), torrentInfo.infohash, torrentInfo.taskInfo.name, id, Cookie.Cookies);
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Add new download task into device use local torrent file
+        /// </summary>
+        /// <param name="device">Xunlei home cloud device</param>
+        /// <param name="savePath">Xunlei home cloud save path</param>
+        /// <param name="infoHash">BTCheckerInfo.infohash</param>
+        /// <param name="name">torrentInfo.taskInfo.name</param>
+        /// <param name="btSub">torrentInfo.taskInfo.id, select need download contents</param>
+        /// <param name="cookie">Xunlei cookies</param>
+        /// <returns>Task<bool></returns>
+        public static Task<bool> AddNewTaskAsync(DeviceInfo device, string savePath, string infoHash, string name, int[] btSub, string cookie)
+        {
+            return Task.Factory.StartNew(()=> {
+                return AddNewTask(device, savePath, infoHash, name, btSub, cookie);
+            });
+        }
+
+        /// <summary>
+        /// Add new download task into device use local torrent file
+        /// </summary>
+        /// <param name="device">Xunlei home cloud device</param>
+        /// <param name="savePath">Local torrent file path</param>
+        /// <param name="infoHash">BTCheckerInfo.infohash</param>
+        /// <param name="name">torrentInfo.taskInfo.name</param>
+        /// <param name="btSub">torrentInfo.taskInfo.subList.id, select need download contents</param>
+        /// <returns>Task<bool></returns>
+        public static Task<bool> AddNewTaskAsync(DeviceInfo device, string savePath, string infoHash, string name, int[] btSub)
+        {
+            return Task.Factory.StartNew(() => {
+                return AddNewTask(device, savePath, infoHash, name, btSub);
+            });
+        }
+
+        /// <summary>
+        /// Add new download task into device use local torrent file
+        /// </summary>
+        /// <param name="device">Xunlei home cloud device</param>
+        /// <param name="path">Local torrent file path</param>
+        /// <returns>Task<bool></returns>
+        public static Task<bool> AddNewTaskAsync(DeviceInfo device, string path)
+        {
+            return Task.Factory.StartNew(() => {
+                return AddNewTask(device, path);
             });
         }
 
