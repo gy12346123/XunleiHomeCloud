@@ -2,8 +2,11 @@
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace XunleiHomeCloud
@@ -78,6 +81,17 @@ namespace XunleiHomeCloud
             public int type;
         }
 
+        public struct TaskSubListInfo
+        {
+            public int failCode;
+            public int id;
+            public string name;
+            public int progress;
+            public int selected;
+            public long size;
+            public int status;
+        }
+
         /// <summary>
         /// Task list item
         /// </summary>
@@ -96,7 +110,7 @@ namespace XunleiHomeCloud
             public long size;
             public int speed;
             public int state;
-            public string subList;
+            public TaskSubListInfo[] subList;
             public int type;
             public string url;
             public VipChannelInfo vipChannel;
@@ -114,6 +128,16 @@ namespace XunleiHomeCloud
             public int serverFailNum;
             public int sync;
             public TaskInfo[] task;
+        }
+
+        /// <summary>
+        /// BT check result struct
+        /// </summary>
+        public struct BTCheckerInfo
+        {
+            public string infohash;
+            public int rtn;
+            public TaskInfo taskInfo;
         }
 
         public struct SettingInfo
@@ -644,7 +668,22 @@ namespace XunleiHomeCloud
                         task[i].size = Convert.ToInt64(json["tasks"][i]["size"]);
                         task[i].speed = Convert.ToInt32(json["tasks"][i]["speed"]);
                         task[i].state = Convert.ToInt32(json["tasks"][i]["state"]);
-                        task[i].subList = json["tasks"][i]["subList"].ToString();
+                        if (json["tasks"][i]["subList"].HasValues)
+                        {
+                            task[i].subList = new TaskSubListInfo[json["tasks"][i]["subList"].Count()];
+                            for (int j = 0; j < json["tasks"][i]["subList"].Count(); j++)
+                            {
+                                task[i].subList[j] = new TaskSubListInfo {
+                                    failCode = Convert.ToInt32(json["tasks"][i]["subList"][j]["failCode"]),
+                                    id = Convert.ToInt32(json["tasks"][i]["subList"][j]["id"]),
+                                    name = json["tasks"][i]["subList"][j]["name"].ToString(),
+                                    progress = Convert.ToInt32(json["tasks"][i]["subList"][j]["progress"]),
+                                    selected = Convert.ToInt32(json["tasks"][i]["subList"][j]["selected"]),
+                                    size = Convert.ToInt64(json["tasks"][i]["subList"][j]["size"]),
+                                    status = Convert.ToInt32(json["tasks"][i]["subList"][j]["status"]),
+                                };
+                            }
+                        }
                         task[i].type = Convert.ToInt32(json["tasks"][i]["type"]);
                         task[i].url = json["tasks"][i]["url"].ToString();
                         // If "tasks" "i" "lixianChannel" has values
@@ -1032,6 +1071,152 @@ namespace XunleiHomeCloud
         {
             return Task.Factory.StartNew(() => {
                 return ActiveDevice(key);
+            });
+        }
+
+        /// <summary>
+        /// Check torrent download info
+        /// </summary>
+        /// <param name="device">Xunlei home cloud device</param>
+        /// <param name="cookie">Xunlei cookies</param>
+        /// <param name="path">Torrent local save path</param>
+        /// <returns>BTCheckerInfo</returns>
+        public static BTCheckerInfo CheckTorrent(DeviceInfo device, string cookie, string path)
+        {
+            FileInfo fileInfo = new FileInfo(path);
+            if (!fileInfo.Exists)
+            {
+                throw new IOException("HomeCloud.CheckTorrent:Torrent file not found.");
+            }
+            string boundary = "---------------" + DateTime.Now.Ticks.ToString("x");
+            byte[] beginBoundary = Encoding.ASCII.GetBytes("--" + boundary + "\r\n");
+            byte[] endBoundary = Encoding.ASCII.GetBytes("--" + boundary + "--\r\n");
+            string filePartHeader = "Content-Disposition: form-data; name=\"{0}\"; filename=\"{1}\"\r\n" + "Content-Type: application/octet-stream\r\n\r\n";
+            byte[] headerbytes = Encoding.UTF8.GetBytes(string.Format(filePartHeader, "filepath", fileInfo.Name));
+            MemoryStream memStream = new MemoryStream();
+            memStream.Write(beginBoundary, 0, beginBoundary.Length);
+            memStream.Write(headerbytes, 0, headerbytes.Length);
+            using (FileStream FS = new FileStream(fileInfo.FullName, FileMode.Open))
+            {
+                byte[] buffer = new byte[2048];
+                int bytesRead;
+                while ((bytesRead = FS.Read(buffer, 0, buffer.Length)) != 0)
+                {
+                    memStream.Write(buffer, 0, bytesRead);
+                }
+            }
+            memStream.Write(endBoundary, 0, endBoundary.Length);
+            memStream.Position = 0;
+            byte[] tempBuffer = new byte[memStream.Length];
+            memStream.Read(tempBuffer, 0, tempBuffer.Length);
+            memStream.Close();
+            memStream = null;
+            
+            HttpHelper http = new HttpHelper();
+            HttpItem item = new HttpItem()
+            {
+                // Use POST
+                Method = "POST",
+                URL = string.Format("{0}btCheck?pid={1}&v=2&ct=0&callback=window.parent._FILE_1_", XunleiBaseURL, device.pid),
+                Timeout = Timeout,
+                Encoding = Encoding.UTF8,
+                Referer = "http://yuancheng.xunlei.com/",
+                Host = "homecloud.yuancheng.xunlei.com",
+                PostDataType = PostDataType.Byte,
+                PostdataByte = tempBuffer,
+                Cookie = cookie,
+                ContentType = string.Format("multipart/form-data; boundary={0}", boundary),
+                Accept = "text/html, application/xhtml+xml, image/jxr, */*",
+                // Need KeepAlive maybe
+                KeepAlive = true
+            };
+            string result = http.GetHtml(item).Html;
+            tempBuffer = null;
+            Match match = Regex.Match(result, "(?<=\\().*(?=\\)</script>)");
+            if (match.Success)
+            {
+                var json = (JObject)JsonConvert.DeserializeObject(match.Value);
+                int code = Convert.ToInt32(json["rtn"]);
+                if (code == 0)
+                {
+                    BTCheckerInfo info = new BTCheckerInfo
+                    {
+                        infohash = json["infohash"].ToString(),
+                        rtn = Convert.ToInt32(json["rtn"]),
+                        taskInfo = new TaskInfo
+                        {
+                            id = 0,
+                            name = json["taskInfo"]["name"].ToString(),
+                            path = json["taskInfo"]["path"].ToString(),
+                            size = Convert.ToInt64(json["taskInfo"]["size"]),
+                            type = Convert.ToInt32(json["taskInfo"]["type"]),
+                            url = json["taskInfo"]["url"].ToString()
+                        }
+                    };
+                    if (json["taskInfo"]["subList"].HasValues)
+                    {
+                        TaskSubListInfo[] subList = new TaskSubListInfo[json["taskInfo"]["subList"].Count()];
+                        for (int i = 0; i < json["taskInfo"]["subList"].Count(); i++)
+                        {
+                            subList[i] = new TaskSubListInfo
+                            {
+                                id = Convert.ToInt32(json["taskInfo"]["subList"][i]["id"]),
+                                name = json["taskInfo"]["subList"][i]["name"].ToString(),
+                                size = Convert.ToInt64(json["taskInfo"]["subList"][i]["size"])
+                            };
+                        }
+                        info.taskInfo.subList = subList;
+                    }
+                    return info;
+                }
+                else
+                {
+                    CommonException.ErrorCode(code, "HomeCloud.CheckTorrent");
+                }
+            }
+
+            throw new XunleiErrorCodeNotHandleException("HomeCloud.CheckTorrent");
+        }
+
+        /// <summary>
+        /// Check torrent download info
+        /// </summary>
+        /// <param name="device">Xunlei home cloud device</param>
+        /// <param name="path">Torrent local save path</param>
+        /// <returns>BTCheckerInfo</returns>
+        public static BTCheckerInfo CheckTorrent(DeviceInfo device, string path)
+        {
+            if (!Cookie.CheckCookie())
+            {
+                throw new XunleiNoCookieException("HomeCloud.CheckTorrent:Cookie not found.");
+            }
+            return CheckTorrent(device, Cookie.Cookies, path);
+        }
+
+        /// <summary>
+        /// Check torrent download info
+        /// </summary>
+        /// <param name="device">Xunlei home cloud device</param>
+        /// <param name="cookie">Xunlei cookies</param>
+        /// <param name="path">Torrent local save path</param>
+        /// <returns>Task<BTCheckerInfo></returns>
+        public static Task<BTCheckerInfo> CheckTorrentAsync(DeviceInfo device, string cookie, string path)
+        {
+            return Task.Factory.StartNew(()=> {
+                return CheckTorrent(device, cookie, path);
+            });
+        }
+
+        /// <summary>
+        /// Check torrent download info
+        /// </summary>
+        /// <param name="device">Xunlei home cloud device</param>
+        /// <param name="path">Torrent local save path</param>
+        /// <returns>Task<BTCheckerInfo></returns>
+        public static Task<BTCheckerInfo> CheckTorrentAsync(DeviceInfo device, string path)
+        {
+            return Task.Factory.StartNew(() => {
+                return CheckTorrent(device, path);
             });
         }
     }
