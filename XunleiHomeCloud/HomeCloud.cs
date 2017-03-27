@@ -1578,5 +1578,126 @@ namespace XunleiHomeCloud
                 return StartTask(device, task);
             });
         }
+
+        /// <summary>
+        /// Delete the xunlei home cloud task
+        /// </summary>
+        /// <param name="device">Xunlei home cloud device</param>
+        /// <param name="id">ListInfo.task[i].id, task id which need delete</param>
+        /// <param name="state">ListInfo.task[i].state, task state now</param>
+        /// <param name="cookie">Xunlei cookies</param>
+        /// <param name="recycleTask">1:Need recycle the task info, 0:not</param>
+        /// <param name="deleteFile">True:Delete download file, false:not</param>
+        /// <returns>Delete succeed or not</returns>
+        public static bool DeleteTask(DeviceInfo device, long id, int state, string cookie, int recycleTask = 1, bool deleteFile = false)
+        {
+            HttpHelper http = new HttpHelper();
+            HttpItem item = new HttpItem()
+            {
+                URL = string.Format("{0}del?pid={1}&tasks={2}_{3}&recycleTask={4}&deleteFile={5}&v=2&ct=0", XunleiBaseURL, device.pid, id, state, recycleTask, deleteFile),
+                Encoding = Encoding.UTF8,
+                Timeout = Timeout,
+                Referer = "http://yuancheng.xunlei.com/",
+                Host = "homecloud.yuancheng.xunlei.com",
+                Cookie = cookie,
+                Accept = "application/javascript, */*;q=0.8",
+                KeepAlive = true
+            };
+            string result = http.GetHtml(item).Html;
+            var json = (JObject)JsonConvert.DeserializeObject(result);
+            int code = Convert.ToInt32(json["rtn"]);
+            if (code == 0)
+            {
+                return true;
+            }
+            else
+            {
+                CommonException.ErrorCode(code, "HomeCloud.DeleteTask");
+            }
+            throw new XunleiErrorCodeNotHandleException("HomeCloud.DeleteTask");
+        }
+
+        /// <summary>
+        /// Delete the xunlei home cloud task
+        /// </summary>
+        /// <param name="device">Xunlei home cloud device</param>
+        /// <param name="id">ListInfo.task[i].id, task id which need delete</param>
+        /// <param name="state">ListInfo.task[i].state, task state now</param>
+        /// <param name="recycleTask">1:Need recycle the task info, 0:not</param>
+        /// <param name="deleteFile">True:Delete download file, false:not</param>
+        /// <returns>Delete succeed or not</returns>
+        public static bool DeleteTask(DeviceInfo device, long id, int state, int recycleTask = 1, bool deleteFile = false)
+        {
+            if (!Cookie.CheckCookie())
+            {
+                throw new XunleiNoCookieException("HomeCloud.DeleteTask:Cookie not found.");
+            }
+            return DeleteTask(device, id, state, Cookie.Cookies, recycleTask, deleteFile);
+        }
+
+        /// <summary>
+        /// Delete the xunlei home cloud task
+        /// </summary>
+        /// <param name="device">Xunlei home cloud device</param>
+        /// <param name="task">TaskInfo from ListInfo, Use HomeCloud.TaskList() to get info</param>
+        /// <param name="recycleTask">1:Need recycle the task info, 0:not</param>
+        /// <param name="deleteFile">True:Delete download file, false:not</param>
+        /// <returns>Delete succeed or not</returns>
+        public static bool DeleteTask(DeviceInfo device, TaskInfo task, int recycleTask = 1, bool deleteFile = false)
+        {
+            if (!Cookie.CheckCookie())
+            {
+                throw new XunleiNoCookieException("HomeCloud.DeleteTask:Cookie not found.");
+            }
+            return DeleteTask(device, task.id, task.state, Cookie.Cookies, recycleTask, deleteFile);
+        }
+
+        /// <summary>
+        /// Delete the xunlei home cloud task
+        /// </summary>
+        /// <param name="device">Xunlei home cloud device</param>
+        /// <param name="id">ListInfo.task[i].id, task id which need delete</param>
+        /// <param name="state">ListInfo.task[i].state, task state now</param>
+        /// <param name="cookie">Xunlei cookies</param>
+        /// <param name="recycleTask">1:Need recycle the task info, 0:not</param>
+        /// <param name="deleteFile">True:Delete download file, false:not</param>
+        /// <returns>Task<bool></returns>
+        public static Task<bool> DeleteTaskAsync(DeviceInfo device, long id, int state, string cookie, int recycleTask = 1, bool deleteFile = false)
+        {
+            return Task.Factory.StartNew(()=> {
+                return DeleteTask(device, id, state, cookie, recycleTask, deleteFile);
+            });
+        }
+
+        /// <summary>
+        /// Delete the xunlei home cloud task
+        /// </summary>
+        /// <param name="device">Xunlei home cloud device</param>
+        /// <param name="id">ListInfo.task[i].id, task id which need delete</param>
+        /// <param name="state">ListInfo.task[i].state, task state now</param>
+        /// <param name="recycleTask">1:Need recycle the task info, 0:not</param>
+        /// <param name="deleteFile">True:Delete download file, false:not</param>
+        /// <returns>Task<bool></returns>
+        public static Task<bool> DeleteTaskAsync(DeviceInfo device, long id, int state, int recycleTask = 1, bool deleteFile = false)
+        {
+            return Task.Factory.StartNew(() => {
+                return DeleteTask(device, id, state, recycleTask, deleteFile);
+            });
+        }
+
+        /// <summary>
+        /// Delete the xunlei home cloud task
+        /// </summary>
+        /// <param name="device">Xunlei home cloud device</param>
+        /// <param name="task">TaskInfo from ListInfo, Use HomeCloud.TaskList() to get info</param>
+        /// <param name="recycleTask">1:Need recycle the task info, 0:not</param>
+        /// <param name="deleteFile">True:Delete download file, false:not</param>
+        /// <returns>Task<bool></returns>
+        public static Task<bool> DeleteTaskAsync(DeviceInfo device, TaskInfo task, int recycleTask = 1, bool deleteFile = false)
+        {
+            return Task.Factory.StartNew(() => {
+                return DeleteTask(device, task, recycleTask, deleteFile);
+            });
+        }
     }
 }
