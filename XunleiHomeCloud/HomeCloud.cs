@@ -278,9 +278,9 @@ namespace XunleiHomeCloud
                 return true;
             }else
             {
-                CommonException.ErrorCode(code, "Xunlei.RenameDevice");
+                CommonException.ErrorCode(code, "HomeCloud.RenameDevice");
             }
-            return false;
+            throw new XunleiErrorCodeNotHandleException("HomeCloud.RenameDevice");
         }
 
         /// <summary>
@@ -501,13 +501,13 @@ namespace XunleiHomeCloud
                 }else
                 {
                     // Return error code, match the error code map
-                    CommonException.ErrorCode(resultCode, "Xunlei.AddNewTask");
+                    CommonException.ErrorCode(resultCode, "HomeCloud.AddNewTask");
                 }
             }else
             {
-                CommonException.ErrorCode(code, "Xunlei.AddNewTask");
+                CommonException.ErrorCode(code, "HomeCloud.AddNewTask");
             }
-            return false;
+            throw new XunleiErrorCodeNotHandleException("HomeCloud.AddNewTask");
         }
 
         /// <summary>
@@ -574,7 +574,7 @@ namespace XunleiHomeCloud
             {
                 CommonException.ErrorCode(code, "HomeCloud.AddNewTask");
             }
-            return false;
+            throw new XunleiErrorCodeNotHandleException("HomeCloud.AddNewTask");
         }
 
         /// <summary>
@@ -695,9 +695,9 @@ namespace XunleiHomeCloud
             }
             else
             {
-                CommonException.ErrorCode(code, "Xunlei.GetSetting_DefaultPath");
+                CommonException.ErrorCode(code, "HomeCloud.GetSetting_DefaultPath");
             }
-            throw new XunleiDevicePathException("Xunlei.GetSetting_DefaultPath:Default path not found.");
+            throw new XunleiDevicePathException("HomeCloud.GetSetting_DefaultPath:Default path not found.");
         }
 
         /// <summary>
@@ -1174,7 +1174,7 @@ namespace XunleiHomeCloud
             {
                 CommonException.ErrorCode(code, "HomeCloud.ActiveDevice");
             }
-            return false;
+            throw new XunleiErrorCodeNotHandleException("HomeCloud.ActiveDevice");
         }
 
         /// <summary>
@@ -1697,6 +1697,78 @@ namespace XunleiHomeCloud
         {
             return Task.Factory.StartNew(() => {
                 return DeleteTask(device, task, recycleTask, deleteFile);
+            });
+        }
+
+        /// <summary>
+        /// Unbind xunlei home cloud device
+        /// </summary>
+        /// <param name="device">Xunlei home cloud device</param>
+        /// <param name="cookie">Xunlei cookies</param>
+        /// <returns>Unbind succeed or not</returns>
+        public static bool UnbindDevice(DeviceInfo device, string cookie)
+        {
+            HttpHelper http = new HttpHelper();
+            HttpItem item = new HttpItem()
+            {
+                URL = string.Format("{0}unbind?pid={1}&v=2&ct=0", XunleiBaseURL, device.pid),
+                Encoding = Encoding.UTF8,
+                Timeout = Timeout,
+                Referer = "http://yuancheng.xunlei.com/",
+                Host = "homecloud.yuancheng.xunlei.com",
+                Cookie = cookie,
+                Accept = "application/javascript, */*;q=0.8"
+            };
+            string result = http.GetHtml(item).Html;
+            var json = (JObject)JsonConvert.DeserializeObject(result);
+            int code = Convert.ToInt32(json["rtn"]);
+            if (code == 0)
+            {
+                return true;
+            }
+            else
+            {
+                CommonException.ErrorCode(code, "HomeCloud.UnbindDevice");
+            }
+            throw new XunleiErrorCodeNotHandleException("HomeCloud.UnbindDevice");
+        }
+
+        /// <summary>
+        /// Unbind xunlei home cloud device
+        /// </summary>
+        /// <param name="device">Xunlei home cloud device</param>
+        /// <returns>Unbind succeed or not</returns>
+        public static bool UnbindDevice(DeviceInfo device)
+        {
+            if (!Cookie.CheckCookie())
+            {
+                throw new XunleiNoCookieException("HomeCloud.UnbindDevice:Cookie not found.");
+            }
+            return UnbindDevice(device, Cookie.Cookies);
+        }
+
+        /// <summary>
+        /// Unbind xunlei home cloud device
+        /// </summary>
+        /// <param name="device">Xunlei home cloud device</param>
+        /// <param name="cookie">Xunlei cookies</param>
+        /// <returns>Task<bool></returns>
+        public static Task<bool> UnbindDeviceAsync(DeviceInfo device, string cookie)
+        {
+            return Task.Factory.StartNew(()=> {
+                return UnbindDevice(device, cookie);
+            });
+        }
+
+        /// <summary>
+        /// Unbind xunlei home cloud device
+        /// </summary>
+        /// <param name="device">Xunlei home cloud device</param>
+        /// <returns>Task<bool></returns>
+        public static Task<bool> UnbindDeviceAsync(DeviceInfo device)
+        {
+            return Task.Factory.StartNew(() => {
+                return UnbindDevice(device);
             });
         }
     }
